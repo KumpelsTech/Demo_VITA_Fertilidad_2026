@@ -503,19 +503,56 @@ export function lotStatusColor(status: LotStatus): string {
   }
 }
 
-export function movementMeta(type: MovementType): { label: string; tone: "neutral" | "success" | "warning" | "critical" | "primary" } {
+export function movementMeta(
+  type?: MovementType | "pending_dispense" | string | null,
+): {
+  label: string;
+  tone: "neutral" | "success" | "warning" | "critical" | "primary";
+} {
   switch (type) {
-    case "received": return { label: "Received", tone: "success" };
-    case "technical-reception": return { label: "Technical reception", tone: "primary" };
-    case "transfer": return { label: "Transfer", tone: "neutral" };
-    case "reserved": return { label: "Reserved", tone: "primary" };
-    case "dispensed": return { label: "Dispensed", tone: "primary" };
-    case "consumed": return { label: "Consumed", tone: "neutral" };
-    case "returned": return { label: "Returned", tone: "neutral" };
-    case "adjustment": return { label: "Adjustment", tone: "warning" };
-    case "quarantine": return { label: "Quarantined", tone: "warning" };
-    case "destruction": return { label: "Destroyed", tone: "critical" };
-    case "expiration": return { label: "Expired", tone: "critical" };
-    case "blocked": return { label: "Blocked", tone: "critical" };
+    case "pending_dispense":
+      return { label: "Pending dispense", tone: "primary" };
+
+    case "received":
+      return { label: "Received", tone: "success" };
+
+    case "technical-reception":
+      return { label: "Technical reception", tone: "primary" };
+
+    case "transfer":
+      return { label: "Transfer", tone: "neutral" };
+
+    case "reserved":
+      return { label: "Reserved", tone: "primary" };
+
+    case "dispensed":
+      return { label: "Dispensed", tone: "primary" };
+
+    case "consumed":
+      return { label: "Consumed", tone: "neutral" };
+
+    case "returned":
+      return { label: "Returned", tone: "neutral" };
+
+    case "adjustment":
+      return { label: "Adjustment", tone: "warning" };
+
+    case "quarantine":
+      return { label: "Quarantined", tone: "warning" };
+
+    case "destruction":
+      return { label: "Destroyed", tone: "critical" };
+
+    case "expiration":
+      return { label: "Expired", tone: "critical" };
+
+    case "blocked":
+      return { label: "Blocked", tone: "critical" };
+
+    default:
+      return {
+        label: type ? String(type).replaceAll("_", " ") : "Unknown",
+        tone: "neutral",
+      };
   }
 }

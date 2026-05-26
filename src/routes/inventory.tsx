@@ -17,6 +17,11 @@ import {
 
 import { useEffect } from "react";
 
+import {
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
+
 import { useMemo, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
@@ -643,15 +648,14 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
 
         <Kpi
           label="Avg performance"
-          value={`${
-            suppliers.length
+          value={`${suppliers.length
               ? Math.round(
-                  (suppliers.reduce((s, x) => s + x.performance, 0) /
-                    suppliers.length) *
-                    100
-                )
+                (suppliers.reduce((s, x) => s + x.performance, 0) /
+                  suppliers.length) *
+                100
+              )
               : 0
-          }%`}
+            }%`}
           hint="On-time & quality"
           icon={TrendingUp}
           tone="success"
@@ -1474,7 +1478,7 @@ function TransfersTab({
 
           {!loading &&
             filtered.length ===
-              0 && (
+            0 && (
               <div className="p-6 text-[12px] text-muted-foreground">
                 No inventory
                 movements found
@@ -1552,9 +1556,9 @@ function TransferStatusBadge({
     {
       label: string;
       tone:
-        Parameters<
-          typeof Pill
-        >[0]["tone"];
+      Parameters<
+        typeof Pill
+      >[0]["tone"];
     }
   > = {
     pending: {
@@ -1689,60 +1693,741 @@ function KitsTab({ onEdit, onNew }: { onEdit: (id: string) => void; onNew: () =>
 // 6. ACTIVITY TAB
 // ============================================================
 function ActivityTab() {
-  const [filter, setFilter] = useState<string>("all");
-  const all = MOVEMENTS;
-  const filtered = filter === "all" ? all : all.filter(m => m.type === filter);
+  const [pendingItems, setPendingItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [dispensingId, setDispensingId] = useState<string | null>(null);
+
+  const loadPendingDispense = async () => {
+    setLoading(true);
+
+    const { data: lotRows, error: lotError } = await supabase
+      .from("inventory_lots")
+      .select(`
+        id,
+        clinic_id,
+        product_id,
+        location_id,
+        internal_lot_code,
+        manufacturer_lot,
+        expiration_date,
+        status,
+        quantity_initial,
+        quantity_available,
+        quantity_reserved,
+        quantity_consumed,
+        products (
+          id,
+          name,
+          unit_of_measure,
+          storage_condition
+        ),
+        locations (
+          id,
+          name
+        )
+      `)
+      .gt("quantity_reserved", 0)
+      .order("expiration_date", { ascending: true });
+
+    if (lotError) {
+      console.error("Error loading reserved lots:", JSON.stringify(lotError, null, 2));
+      notify("Error", lotError.message || "No se pudieron cargar los lotes reservados.");
+      setLoading(false);
+      return;
+    }
+
+    const reservedLots = lotRows ?? [];
+
+    const productIds = Array.from(
+      new Set(
+        reservedLots
+          .map((lot: any) => lot.product_id)
+          .filter((id: string | null): id is string => Boolean(id)),
+      ),
+    );
+
+    let prescriptionItemsByProductId = new Map<string, any[]>();
+
+    if (productIds.length > 0) {
+      const { data: prescriptionItemRows, error: prescriptionItemError } =
+        await supabase
+          .from("prescription_items")
+          .select(`
+            id,
+            prescription_id,
+            medication_id,
+            dose,
+            route,
+            frequency,
+            duration_days,
+            start_datetime,
+            end_datetime,
+            administration_time,
+            instructions,
+            quantity_required,
+            quantity_unit,
+            status,
+            inventory_status
+          `)
+          .in("medication_id", productIds);
+
+      if (prescriptionItemError) {
+        console.error(
+          "Error loading prescription items:",
+          JSON.stringify(prescriptionItemError, null, 2),
+        );
+        notify(
+          "Error",
+          prescriptionItemError.message || "No se pudieron cargar los ítems de prescripción.",
+        );
+      }
+
+      const validPrescriptionItems = (prescriptionItemRows ?? []).filter((item: any) => {
+        const status = String(item.status ?? "").toLowerCase();
+        const inventoryStatus = String(item.inventory_status ?? "").toLowerCase();
+
+        return (
+          status !== "dispensed" &&
+          status !== "cancelled" &&
+          status !== "canceled" &&
+          inventoryStatus !== "dispensed" &&
+          inventoryStatus !== "cancelled" &&
+          inventoryStatus !== "canceled"
+        );
+      });
+
+      prescriptionItemsByProductId = validPrescriptionItems.reduce(
+        (map: Map<string, any[]>, item: any) => {
+          if (!item.medication_id) return map;
+
+          const current = map.get(item.medication_id) ?? [];
+          current.push(item);
+          map.set(item.medication_id, current);
+
+          return map;
+        },
+        new Map<string, any[]>(),
+      );
+
+      console.log("RESERVED LOT PRODUCT IDS", productIds);
+      console.log("PRESCRIPTION ITEMS FOUND", validPrescriptionItems);
+    }
+
+    const allPrescriptionItems = Array.from(
+      prescriptionItemsByProductId.values(),
+    ).flat();
+
+    const prescriptionIds = Array.from(
+      new Set(
+        allPrescriptionItems
+          .map((item: any) => item.prescription_id)
+          .filter((id: string | null): id is string => Boolean(id)),
+      ),
+    );
+
+    let prescriptionsById = new Map<string, any>();
+
+    if (prescriptionIds.length > 0) {
+      const { data: prescriptionRows, error: prescriptionError } = await supabase
+        .from("prescriptions")
+        .select(`
+          id,
+          clinic_patient_id
+        `)
+        .in("id", prescriptionIds);
+
+      if (prescriptionError) {
+        console.error(
+          "Error loading prescriptions:",
+          JSON.stringify(prescriptionError, null, 2),
+        );
+        notify(
+          "Error",
+          prescriptionError.message || "No se pudieron cargar las prescripciones.",
+        );
+      }
+
+      prescriptionsById = new Map(
+        (prescriptionRows ?? []).map((prescription: any) => [
+          prescription.id,
+          prescription,
+        ]),
+      );
+
+      console.log("PRESCRIPTIONS FOUND", prescriptionRows);
+    }
+
+    /**
+     * prescriptions.clinic_patient_id apunta al id de clinic_persons.
+     */
+    const clinicPersonIds = Array.from(
+      new Set(
+        Array.from(prescriptionsById.values())
+          .map((prescription: any) => prescription.clinic_patient_id)
+          .filter((id: string | null): id is string => Boolean(id)),
+      ),
+    );
+
+    let clinicPersonsById = new Map<string, any>();
+
+    if (clinicPersonIds.length > 0) {
+      const { data: clinicPersonRows, error: clinicPersonError } =
+        await supabase
+          .from("clinic_persons")
+          .select(`
+            id,
+            person_id
+          `)
+          .in("id", clinicPersonIds);
+
+      if (clinicPersonError) {
+        console.error(
+          "Error loading clinic persons:",
+          JSON.stringify(clinicPersonError, null, 2),
+        );
+        notify(
+          "Error",
+          clinicPersonError.message || "No se pudieron cargar los pacientes clínicos.",
+        );
+      }
+
+      clinicPersonsById = new Map(
+        (clinicPersonRows ?? []).map((clinicPerson: any) => [
+          clinicPerson.id,
+          clinicPerson,
+        ]),
+      );
+
+      console.log("CLINIC PERSONS FOUND", clinicPersonRows);
+    }
+
+    const personIds = Array.from(
+      new Set(
+        Array.from(clinicPersonsById.values())
+          .map((clinicPerson: any) => clinicPerson.person_id)
+          .filter((id: string | null): id is string => Boolean(id)),
+      ),
+    );
+
+    let personsById = new Map<string, any>();
+
+    if (personIds.length > 0) {
+      const { data: personRows, error: personError } = await supabase
+        .from("persons")
+        .select(`
+          id,
+          first_name,
+          last_name,
+          document_number,
+          phone,
+          email
+        `)
+        .in("id", personIds);
+
+      if (personError) {
+        console.error("Error loading persons:", JSON.stringify(personError, null, 2));
+        notify("Error", personError.message || "No se pudieron cargar las personas.");
+      }
+
+      personsById = new Map(
+        (personRows ?? []).map((person: any) => [person.id, person]),
+      );
+
+      console.log("PERSONS FOUND", personRows);
+    }
+
+    const prescriptionItemIds = Array.from(
+      new Set(
+        allPrescriptionItems
+          .map((item: any) => item.id)
+          .filter((id: string | null): id is string => Boolean(id)),
+      ),
+    );
+
+    let dispensedPrescriptionItemIds = new Set<string>();
+
+    if (prescriptionItemIds.length > 0) {
+      const { data: dispensedRows, error: dispensedError } = await supabase
+        .from("inventory_movements")
+        .select(`
+          id,
+          related_prescription_item_id
+        `)
+        .eq("movement_type", "dispensed")
+        .in("related_prescription_item_id", prescriptionItemIds);
+
+      if (dispensedError) {
+        console.error(
+          "Error loading dispensed movements:",
+          JSON.stringify(dispensedError, null, 2),
+        );
+      }
+
+      dispensedPrescriptionItemIds = new Set(
+        (dispensedRows ?? [])
+          .map((row: any) => row.related_prescription_item_id)
+          .filter(Boolean),
+      );
+    }
+
+    const mappedItems: any[] = reservedLots.flatMap((lot: any): any[] => {
+      const product = Array.isArray(lot.products) ? lot.products[0] : lot.products;
+      const location = Array.isArray(lot.locations) ? lot.locations[0] : lot.locations;
+
+      const prescriptionItems = prescriptionItemsByProductId.get(lot.product_id) ?? [];
+
+      const notDispensedItems = prescriptionItems.filter(
+        (item: any) => !dispensedPrescriptionItemIds.has(item.id),
+      );
+
+      if (notDispensedItems.length === 0) {
+        return [
+          {
+            id: `lot-only-${lot.id}`,
+            mode: "lot_only",
+            canDispense: false,
+
+            prescriptionItemId: null,
+            prescriptionId: null,
+            clinicPatientId: null,
+            clinicPersonId: null,
+            personId: null,
+
+            lotId: lot.id,
+            clinicId: lot.clinic_id,
+            sourceLocationId: lot.location_id,
+
+            relatedCaseId: null,
+            relatedPatientId: null,
+            relatedProcedureId: null,
+
+            patientName: "Sin paciente vinculado",
+            patientDocument: null,
+
+            productName: product?.name ?? "Producto sin nombre",
+            productUnit: product?.unit_of_measure ?? "unit",
+
+            lotCode:
+              lot.manufacturer_lot ??
+              lot.internal_lot_code ??
+              lot.id ??
+              "Sin lote",
+
+            locationName: location?.name ?? "Ubicación no definida",
+
+            quantity: Number(lot.quantity_reserved ?? 0),
+            dose: null,
+            route: null,
+            frequency: null,
+            instructions:
+              "No se encontró prescription_items.medication_id que coincida con inventory_lots.product_id, o la prescripción ya fue dispensada.",
+
+            diagnostic: {
+              type: "lot_without_prescription_item",
+              lotProductId: lot.product_id,
+              prescriptionItemsFound: prescriptionItems.length,
+              notDispensedItemsFound: notDispensedItems.length,
+            },
+
+            lotAvailable: Number(lot.quantity_available ?? 0),
+            lotReserved: Number(lot.quantity_reserved ?? 0),
+            lotConsumed: Number(lot.quantity_consumed ?? 0),
+          },
+        ];
+      }
+
+      return notDispensedItems.map((prescriptionItem: any): any => {
+        const prescription = prescriptionsById.get(prescriptionItem.prescription_id);
+
+        const clinicPatientId = prescription?.clinic_patient_id ?? null;
+
+        const clinicPerson = clinicPatientId
+          ? clinicPersonsById.get(clinicPatientId)
+          : null;
+
+        const clinicPersonId = clinicPerson?.id ?? clinicPatientId ?? null;
+
+        const personId = clinicPerson?.person_id ?? null;
+
+        const person = personId ? personsById.get(personId) : null;
+
+        const firstName = person?.first_name ?? "";
+        const lastName = person?.last_name ?? "";
+
+        const patientName =
+          `${firstName} ${lastName}`.trim() || "Paciente sin nombre";
+
+        const hasFullPatientLink = Boolean(
+          prescriptionItem.prescription_id &&
+          clinicPatientId &&
+          clinicPerson?.person_id &&
+          person,
+        );
+
+        const quantityToDeliver = Number(
+          prescriptionItem.quantity_required ?? lot.quantity_reserved ?? 0,
+        );
+
+        return {
+          id: `prescription-${prescriptionItem.id}-${lot.id}`,
+          mode: "prescription_linked",
+          canDispense: hasFullPatientLink,
+
+          prescriptionItemId: prescriptionItem.id,
+          prescriptionId: prescriptionItem.prescription_id,
+          clinicPatientId,
+          clinicPersonId,
+          personId,
+
+          lotId: lot.id,
+          clinicId: lot.clinic_id,
+          sourceLocationId: lot.location_id,
+
+          relatedCaseId: null,
+          relatedPatientId: personId,
+          relatedProcedureId: null,
+
+          patientName: hasFullPatientLink ? patientName : "Paciente no vinculado",
+          patientDocument: person?.document_number ?? null,
+
+          productName: product?.name ?? "Producto sin nombre",
+          productUnit:
+            prescriptionItem.quantity_unit ??
+            product?.unit_of_measure ??
+            "unit",
+
+          lotCode:
+            lot.manufacturer_lot ??
+            lot.internal_lot_code ??
+            lot.id ??
+            "Sin lote",
+
+          locationName: location?.name ?? "Ubicación no definida",
+
+          quantity: quantityToDeliver,
+          dose: prescriptionItem.dose ?? null,
+          route: prescriptionItem.route ?? null,
+          frequency: prescriptionItem.frequency ?? null,
+          instructions: prescriptionItem.instructions ?? null,
+
+          diagnostic: {
+            type: "prescription_without_full_patient_link",
+            prescriptionItemId: prescriptionItem.id,
+            prescriptionId: prescriptionItem.prescription_id,
+            clinicPatientId,
+            clinicPersonId,
+            clinicPersonFound: Boolean(clinicPerson),
+            personId,
+            personFound: Boolean(person),
+          },
+
+          lotAvailable: Number(lot.quantity_available ?? 0),
+          lotReserved: Number(lot.quantity_reserved ?? 0),
+          lotConsumed: Number(lot.quantity_consumed ?? 0),
+        };
+      });
+    });
+
+    setPendingItems(mappedItems);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadPendingDispense();
+  }, []);
+
+  const dispenseMedication = async (item: any) => {
+    if (!item.canDispense) {
+      notify(
+        "No se puede entregar",
+        "Este medicamento reservado todavía no tiene prescripción y paciente completamente vinculados.",
+      );
+      return;
+    }
+
+    if (!item.prescriptionItemId) {
+      notify("Error", "No se encontró el prescription_item_id.");
+      return;
+    }
+
+    if (!item.lotId) {
+      notify("Error", "No se encontró el lote reservado.");
+      return;
+    }
+
+    const quantityToDispense = Number(item.quantity ?? 0);
+
+    if (!quantityToDispense || quantityToDispense <= 0) {
+      notify("Cantidad inválida", "La cantidad a entregar no es válida.");
+      return;
+    }
+
+    if (Number(item.lotReserved ?? 0) < quantityToDispense) {
+      notify(
+        "Reserva insuficiente",
+        "La cantidad reservada del lote es menor a la cantidad a entregar.",
+      );
+      return;
+    }
+
+    setDispensingId(item.prescriptionItemId);
+
+    const newReserved = Math.max(
+      Number(item.lotReserved ?? 0) - quantityToDispense,
+      0,
+    );
+
+    const newConsumed = Number(item.lotConsumed ?? 0) + quantityToDispense;
+
+    const { error: lotError } = await supabase
+      .from("inventory_lots")
+      .update({
+        quantity_reserved: newReserved,
+        quantity_consumed: newConsumed,
+      })
+      .eq("id", item.lotId);
+
+    if (lotError) {
+      console.error("Error updating lot:", JSON.stringify(lotError, null, 2));
+      notify("Error", lotError.message || "No se pudo actualizar el lote.");
+      setDispensingId(null);
+      return;
+    }
+
+    const movementPayload = {
+      id: crypto.randomUUID(),
+      clinic_id: item.clinicId,
+      lot_id: item.lotId,
+      inventory_reservation_id: null,
+      movement_type: "dispensed",
+      source_location_id: item.sourceLocationId,
+      destination_location_id: null,
+      quantity: quantityToDispense,
+      related_case_id: item.relatedCaseId,
+      related_patient_id: item.relatedPatientId,
+      related_procedure_id: item.relatedProcedureId,
+      related_prescription_item_id: item.prescriptionItemId,
+      performed_by: null,
+      reason: "Entrega de medicamento reservado al paciente",
+      created_at: new Date().toISOString(),
+    };
+
+    const { error: movementError } = await supabase
+      .from("inventory_movements")
+      .insert(movementPayload);
+
+    if (movementError) {
+      console.error("Dispensed movement payload:", movementPayload);
+      console.error(
+        "Error inserting dispensed movement:",
+        JSON.stringify(movementError, null, 2),
+      );
+
+      await supabase
+        .from("inventory_lots")
+        .update({
+          quantity_reserved: item.lotReserved,
+          quantity_consumed: item.lotConsumed,
+        })
+        .eq("id", item.lotId);
+
+      notify(
+        "Error",
+        movementError.message || "No se pudo registrar la salida del inventario.",
+      );
+
+      setDispensingId(null);
+      return;
+    }
+
+    const { error: prescriptionItemError } = await supabase
+      .from("prescription_items")
+      .update({
+        status: "dispensed",
+        inventory_status: "dispensed",
+      })
+      .eq("id", item.prescriptionItemId);
+
+    if (prescriptionItemError) {
+      console.error(
+        "Error updating prescription item:",
+        JSON.stringify(prescriptionItemError, null, 2),
+      );
+
+      notify(
+        "Advertencia",
+        "El inventario salió correctamente, pero no se pudo actualizar la prescripción.",
+      );
+
+      setDispensingId(null);
+      await loadPendingDispense();
+      return;
+    }
+
+    notify(
+      "Medicamento entregado",
+      `${item.productName} fue entregado a ${item.patientName}.`,
+    );
+
+    setDispensingId(null);
+    await loadPendingDispense();
+  };
 
   return (
     <div className="space-y-6">
       <Card>
-        <div className="p-4 flex flex-wrap items-center gap-2 border-b border-border">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {[
-              { id: "all", label: "All" },
-              { id: "dispensed", label: "Dispensed" },
-              { id: "reserved", label: "Reserved" },
-              { id: "transfer", label: "Transfers" },
-              { id: "consumed", label: "Consumed" },
-              { id: "quarantine", label: "Quarantine" },
-              { id: "expiration", label: "Expirations" },
-              { id: "blocked", label: "Blocked" },
-            ].map(f => (
-              <FilterBtn key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</FilterBtn>
-            ))}
+        <div className="p-4 border-b border-border flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Entrega de medicamentos al paciente
+            </h3>
+
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Lotes reservados vinculados a prescripciones y pacientes.
+            </p>
           </div>
+
+          <button
+            onClick={loadPendingDispense}
+            disabled={loading}
+            className="text-[11px] px-3 py-1.5 rounded-md bg-secondary hover:bg-accent transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+          >
+            {loading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="size-3.5" />
+            )}
+            Refresh
+          </button>
         </div>
-        <ol className="divide-y divide-border">
-          {filtered.map(m => {
-            const meta = movementMeta(m.type);
-            return (
-              <li key={m.id} className="grid grid-cols-12 gap-3 px-5 py-3.5 hover:bg-accent/30 transition-colors items-start">
-                <div className="col-span-2 text-[11px]">
-                  <p className="font-medium text-foreground">{m.ts}</p>
-                  <p className="font-mono text-[10px] text-muted-foreground">{m.id}</p>
+
+        {loading && (
+          <div className="p-5 text-[12px] text-muted-foreground flex items-center gap-2">
+            <Loader2 className="size-4 animate-spin" />
+            Cargando medicamentos pendientes por entregar...
+          </div>
+        )}
+
+        {!loading && pendingItems.length === 0 && (
+          <div className="p-6 text-[12px] text-muted-foreground">
+            No hay medicamentos reservados pendientes por entregar.
+          </div>
+        )}
+
+        {!loading && pendingItems.length > 0 && (
+          <div className="divide-y divide-border">
+            {pendingItems.map((item) => (
+              <div
+                key={item.id}
+                className="p-5 hover:bg-accent/30 transition-colors grid grid-cols-12 gap-4 items-start"
+              >
+                <div className="col-span-3">
+                  <p className="text-[12px] font-semibold text-foreground">
+                    {item.patientName}
+                  </p>
+
+                  {item.patientDocument && (
+                    <p className="text-[10.5px] text-muted-foreground">
+                      Doc. {item.patientDocument}
+                    </p>
+                  )}
+
+                  <p className="text-[10.5px] text-muted-foreground mt-0.5">
+                    {item.canDispense
+                      ? "Prescripción y paciente vinculados"
+                      : "Vínculo incompleto"}
+                  </p>
+
+                  {item.prescriptionItemId && (
+                    <p className="font-mono text-[10px] text-muted-foreground truncate">
+                      {item.prescriptionItemId}
+                    </p>
+                  )}
                 </div>
-                <div className="col-span-2"><Pill tone={meta.tone === "neutral" ? "muted" : meta.tone}>{meta.label}</Pill></div>
-                <div className="col-span-4 text-[12px]">
-                  <p className="font-semibold text-foreground">{m.product}</p>
+
+                <div className="col-span-4">
+                  <p className="text-[12px] font-semibold text-foreground">
+                    {item.productName}
+                  </p>
+
+                  <p className="text-[10.5px] text-muted-foreground mt-0.5">
+                    Lote: <span className="font-mono">{item.lotCode}</span>
+                  </p>
+
                   <p className="text-[10.5px] text-muted-foreground">
-                    <span className="font-mono">{m.lotId}</span> · {m.quantity} {m.unit}
+                    Ubicación: {item.locationName}
+                  </p>
+
+                  {(item.dose || item.route || item.frequency) && (
+                    <p className="text-[10.5px] text-muted-foreground mt-1">
+                      {item.dose && `${item.dose}`}
+                      {item.route && ` · ${item.route}`}
+                      {item.frequency && ` · ${item.frequency}`}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-span-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    Cantidad a entregar
+                  </p>
+
+                  <p className="text-sm font-semibold text-foreground">
+                    {item.quantity} {item.productUnit}
+                  </p>
+
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Reservado lote
+                  </p>
+
+                  <p className="text-[11px] text-muted-foreground">
+                    {item.lotReserved} {item.productUnit}
                   </p>
                 </div>
-                <div className="col-span-3 text-[11.5px] text-muted-foreground flex items-center gap-1.5">
-                  <span className="truncate">{m.from}</span>
-                  <ArrowRight className="size-3 shrink-0" />
-                  <span className="truncate">{m.to}</span>
+
+                <div className="col-span-3 flex justify-end">
+                  <button
+                    onClick={() => dispenseMedication(item)}
+                    disabled={
+                      !item.canDispense ||
+                      dispensingId === item.prescriptionItemId
+                    }
+                    className="text-[12px] px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-2"
+                  >
+                    {dispensingId === item.prescriptionItemId ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="size-4" />
+                    )}
+                    Entregar al paciente
+                  </button>
                 </div>
-                <div className="col-span-1 text-right text-[11px] text-muted-foreground truncate">{m.user}</div>
-                {m.reason && (
-                  <div className="col-start-3 col-span-10 text-[10.5px] text-warning bg-warning/5 border border-warning/15 rounded-md px-2 py-1 mt-1">
-                    {m.reason}
+
+                {item.instructions && (
+                  <div
+                    className={cn(
+                      "col-start-4 col-span-9 text-[10.5px] border rounded-md px-2 py-1",
+                      item.canDispense
+                        ? "text-muted-foreground bg-secondary/60 border-border"
+                        : "text-warning bg-warning/5 border-warning/20",
+                    )}
+                  >
+                    {item.instructions}
                   </div>
                 )}
-              </li>
-            );
-          })}
-        </ol>
+
+                {!item.canDispense && item.diagnostic && (
+                  <div className="col-start-4 col-span-9 text-[10px] bg-critical/5 border border-critical/15 text-critical rounded-md px-2 py-1">
+                    Diagnóstico vínculo:{" "}
+                    <span className="font-mono">
+                      {JSON.stringify(item.diagnostic)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -2620,80 +3305,80 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
     setLots(lotsData ?? []);
   }
 
- async function submitTransfer() {
-  try {
-    console.log("LINES", lines);
+  async function submitTransfer() {
+    try {
+      console.log("LINES", lines);
 
-    for (const line of lines) {
-      if (!line.lot || !line.qty) continue;
+      for (const line of lines) {
+        if (!line.lot || !line.qty) continue;
 
-      const insertPayload = {
-        clinic_id: "385f976d-2e25-4af3-91da-5d347acaa54f",
+        const insertPayload = {
+          clinic_id: "385f976d-2e25-4af3-91da-5d347acaa54f",
 
-        lot_id: line.lot,
+          lot_id: line.lot,
 
-        movement_type: "transfer",
+          movement_type: "transfer",
 
-        source_location_id: fromWarehouse || null,
+          source_location_id: fromWarehouse || null,
 
-        destination_location_id: toWarehouse || null,
+          destination_location_id: toWarehouse || null,
 
-        quantity: Number(line.qty),
+          quantity: Number(line.qty),
 
-        reason: reason || null,
+          reason: reason || null,
 
-        created_at: new Date().toISOString(),
-      };
+          created_at: new Date().toISOString(),
+        };
 
-      console.log("INSERT PAYLOAD", insertPayload);
+        console.log("INSERT PAYLOAD", insertPayload);
 
-      // ====================================================
-      // INSERT MOVEMENT
-      // ====================================================
+        // ====================================================
+        // INSERT MOVEMENT
+        // ====================================================
 
-      const { data, error } = await supabase
-        .from("inventory_movements")
-        .insert(insertPayload)
-        .select();
+        const { data, error } = await supabase
+          .from("inventory_movements")
+          .insert(insertPayload)
+          .select();
 
-      console.log("INSERT RESPONSE", data);
-      console.log("INSERT ERROR", error);
+        console.log("INSERT RESPONSE", data);
+        console.log("INSERT ERROR", error);
 
-      if (error) {
-        alert(error.message);
-        return;
+        if (error) {
+          alert(error.message);
+          return;
+        }
+
+        // ====================================================
+        // UPDATE LOT LOCATION
+        // ====================================================
+
+        const { error: updateError } = await supabase
+          .from("inventory_lots")
+          .update({
+            location_id: toWarehouse,
+          })
+          .eq("id", line.lot);
+
+        console.log("UPDATE ERROR", updateError);
+
+        if (updateError) {
+          alert(updateError.message);
+          return;
+        }
       }
 
-      // ====================================================
-      // UPDATE LOT LOCATION
-      // ====================================================
+      runMockAction("Submitting transfer", {
+        detail: "Inventory movement registered",
+        success: "Transfer created successfully",
+      });
 
-      const { error: updateError } = await supabase
-        .from("inventory_lots")
-        .update({
-          location_id: toWarehouse,
-        })
-        .eq("id", line.lot);
+      onClose();
 
-      console.log("UPDATE ERROR", updateError);
-
-      if (updateError) {
-        alert(updateError.message);
-        return;
-      }
+    } catch (err) {
+      console.error("TRANSFER ERROR", err);
     }
-
-    runMockAction("Submitting transfer", {
-      detail: "Inventory movement registered",
-      success: "Transfer created successfully",
-    });
-
-    onClose();
-
-  } catch (err) {
-    console.error("TRANSFER ERROR", err);
   }
-}
 
   return (
     <Panel
@@ -2839,10 +3524,10 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
                             prev.map((x, idx) =>
                               idx === i
                                 ? {
-                                    ...x,
-                                    product,
-                                    lot: "",
-                                  }
+                                  ...x,
+                                  product,
+                                  lot: "",
+                                }
                                 : x
                             )
                           );
@@ -2889,9 +3574,9 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
                             prev.map((x, idx) =>
                               idx === i
                                 ? {
-                                    ...x,
-                                    lot,
-                                  }
+                                  ...x,
+                                  lot,
+                                }
                                 : x
                             )
                           );
@@ -2947,9 +3632,9 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
                             prev.map((x, idx) =>
                               idx === i
                                 ? {
-                                    ...x,
-                                    qty,
-                                  }
+                                  ...x,
+                                  qty,
+                                }
                                 : x
                             )
                           );
