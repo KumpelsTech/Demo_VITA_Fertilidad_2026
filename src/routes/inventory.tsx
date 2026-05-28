@@ -345,37 +345,124 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
   }, []);
 
   async function loadProducts() {
+    setLoading(true);
 
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("name");
+    const [productsRes, lotsRes] = await Promise.all([
+      supabase
+        .from("products")
+        .select(`
+        id,
+        clinic_id,
+        name,
+        generic_name,
+        category,
+        presentation,
+        unit_of_measure,
+        storage_condition,
+        temperature_min,
+        temperature_max,
+        invima_registration,
+        active,
+        strength_value,
+        product_type,
+        brand,
+        manufacturer,
+        model,
+        reference_code,
+        risk_class,
+        requires_prescription,
+        requires_calibration,
+        requires_maintenance,
+        is_reusable,
+        is_sterile,
+        product_attributes
+      `)
+        .order("name"),
 
-    if (error) {
-      console.error("Error loading products:", error);
+      supabase
+        .from("inventory_lots")
+        .select(`
+        id,
+        product_id,
+        quantity_available,
+        quantity_reserved,
+        quantity_consumed,
+        status
+      `),
+    ]);
+
+    if (productsRes.error) {
+      console.error("Error loading products:", productsRes.error);
+      setProducts([]);
+      setLoading(false);
       return;
     }
 
-    const mappedProducts: MasterProduct[] = (data || []).map((p: any) => ({
-      code: p.id,
-      name: p.name,
-      generic: p.generic_name ?? "",
-      category: p.category ?? "Medication",
-      unit: p.unit_of_measure ?? "",
-      presentation: p.presentation ?? "",
-      reference: "",
-      storage: p.storage_condition ?? "",
-      active: p.active ?? true,
-      invima: p.invima_registration ?? "",
-      coldChain:
-        p.temperature_min !== null ||
-        p.temperature_max !== null,
-      controlled: false,
-      suppliers: [],
-      stock: 0,
-      reserved: 0,
-      linkedKits: 0,
-    }));
+    if (lotsRes.error) {
+      console.error("Error loading inventory lots:", lotsRes.error);
+    }
+
+    const productsRows = productsRes.data ?? [];
+    const lotsRows = lotsRes.data ?? [];
+
+    const mappedProducts: MasterProduct[] = productsRows.map((p: any) => {
+      const productLots = lotsRows.filter(
+        (lot: any) => lot.product_id === p.id,
+      );
+
+      const stock = productLots.reduce(
+        (total: number, lot: any) =>
+          total + Number(lot.quantity_available ?? 0),
+        0,
+      );
+
+      const reserved = productLots.reduce(
+        (total: number, lot: any) =>
+          total + Number(lot.quantity_reserved ?? 0),
+        0,
+      );
+
+      return {
+        id: p.id,
+
+        code: p.reference_code ?? p.id.slice(0, 8),
+        name: p.name ?? "",
+        generic: p.generic_name ?? "",
+        category: normalizeProductCategory(p.category),
+        unit: p.unit_of_measure ?? "",
+        presentation: p.presentation ?? "",
+        reference: p.reference_code ?? "",
+        storage: p.storage_condition ?? "",
+        active: p.active ?? true,
+        invima: p.invima_registration ?? "",
+        coldChain:
+          String(p.storage_condition ?? "").toLowerCase().includes("cold") ||
+          p.temperature_min !== null ||
+          p.temperature_max !== null,
+        controlled: Boolean(p.requires_prescription ?? false),
+        suppliers: [],
+        stock,
+        reserved,
+        linkedKits: 0,
+
+        clinic_id: p.clinic_id ?? null,
+        temperature_min: p.temperature_min ?? null,
+        temperature_max: p.temperature_max ?? null,
+        strength_value: p.strength_value ?? null,
+        product_type: p.product_type ?? null,
+        brand: p.brand ?? null,
+        manufacturer: p.manufacturer ?? null,
+        model: p.model ?? null,
+        reference_code: p.reference_code ?? null,
+        risk_class: p.risk_class ?? null,
+        requires_prescription: p.requires_prescription ?? false,
+        requires_calibration: p.requires_calibration ?? false,
+        requires_maintenance: p.requires_maintenance ?? false,
+        is_reusable: p.is_reusable ?? false,
+        is_sterile: p.is_sterile ?? false,
+        product_attributes: p.product_attributes ?? null,
+      };
+    });
 
     setProducts(mappedProducts);
     setLoading(false);
@@ -566,6 +653,28 @@ function Th({ children, className }: { children?: React.ReactNode; className?: s
 }
 function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <td className={cn("px-4 py-3 align-middle", className)}>{children}</td>;
+}
+
+function normalizeProductCategory(
+  value: string | null | undefined,
+): MasterProduct["category"] {
+  const normalized = String(value ?? "").trim();
+
+  const allowed: MasterProduct["category"][] = [
+    "Hormone",
+    "Medication",
+    "Reagent",
+    "Supply",
+    "IVF Media",
+    "Kit",
+    "Anesthesia",
+  ];
+
+  if (allowed.includes(normalized as MasterProduct["category"])) {
+    return normalized as MasterProduct["category"];
+  }
+
+  return "Supply";
 }
 
 // ============================================================
@@ -784,18 +893,28 @@ type InventoryLotStatusLocal =
 
 type InventoryLotView = {
   id: string;
+  clinicId: string | null;
+  productId: string | null;
+  supplierId: string | null;
+  locationId: string | null;
+
+  internalLotCode: string;
   manufacturerLot: string;
   product: string;
   supplier: string;
   location: string;
-  locationId: string | null;
+
   available: number;
   reserved: number;
   total: number;
   consumed: number;
   cost: number;
+
   expiry: string;
+  manufactureDate: string;
+  receivedAt: string;
   daysToExpiry: number;
+
   unit: string;
   tempRequirement: string;
   coldChain: boolean;
@@ -817,6 +936,8 @@ function InventoryTab() {
     useState<InventoryLotStatusLocal | "all">("all");
 
   const [adjLot, setAdjLot] = useState<string | null>(null);
+  const [newLotOpen, setNewLotOpen] = useState(false);
+
   const [lots, setLots] = useState<InventoryLotView[]>([]);
   const [loadingLots, setLoadingLots] = useState(false);
 
@@ -831,27 +952,36 @@ function InventoryTab() {
       .from("inventory_lots")
       .select(`
         id,
+        clinic_id,
+        product_id,
+        supplier_id,
+        location_id,
+        internal_lot_code,
         manufacturer_lot,
         expiration_date,
+        manufacture_date,
         status,
         quantity_initial,
         quantity_available,
         quantity_reserved,
         quantity_consumed,
         unit_cost,
-        location_id,
+        received_at,
 
         products (
+          id,
           name,
           unit_of_measure,
           storage_condition
         ),
 
         suppliers (
+          id,
           name
         ),
 
         locations (
+          id,
           name
         )
       `)
@@ -861,7 +991,12 @@ function InventoryTab() {
     console.log("LOTS ERROR", error);
 
     if (error) {
-      console.error(error);
+      console.error("Error loading inventory lots:", error);
+
+      runMockAction("Loading inventory lots", {
+        error: error.message,
+      });
+
       setLots([]);
       setLoadingLots(false);
       return;
@@ -880,25 +1015,34 @@ function InventoryTab() {
 
       const daysToExpiry = expiryDate
         ? Math.ceil(
-            (expiryDate.getTime() - now.getTime()) /
-              (1000 * 60 * 60 * 24),
+            (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
           )
         : 0;
 
       return {
         id: lot.id,
+        clinicId: lot.clinic_id ?? null,
+        productId: lot.product_id ?? null,
+        supplierId: lot.supplier_id ?? null,
+        locationId: lot.location_id ?? null,
+
+        internalLotCode: lot.internal_lot_code ?? "—",
         manufacturerLot: lot.manufacturer_lot ?? "—",
         product: product?.name ?? "Unknown product",
         supplier: supplier?.name ?? "Unknown supplier",
         location: location?.name ?? "Unknown warehouse",
-        locationId: lot.location_id ?? null,
+
         available: Number(lot.quantity_available ?? 0),
         reserved: Number(lot.quantity_reserved ?? 0),
         total: Number(lot.quantity_initial ?? 0),
         consumed: Number(lot.quantity_consumed ?? 0),
         cost: Number(lot.unit_cost ?? 0),
+
         expiry: lot.expiration_date ?? "—",
+        manufactureDate: lot.manufacture_date ?? "—",
+        receivedAt: lot.received_at ?? "—",
         daysToExpiry,
+
         unit: product?.unit_of_measure ?? "units",
         tempRequirement: product?.storage_condition ?? "N/A",
         coldChain:
@@ -917,10 +1061,14 @@ function InventoryTab() {
       (!q ||
         lot.product.toLowerCase().includes(q.toLowerCase()) ||
         lot.id.toLowerCase().includes(q.toLowerCase()) ||
+        lot.internalLotCode.toLowerCase().includes(q.toLowerCase()) ||
         lot.manufacturerLot.toLowerCase().includes(q.toLowerCase())),
   );
 
-  const totalValue = lots.reduce((sum, lot) => sum + lot.cost * lot.total, 0);
+  const totalValue = lots.reduce(
+    (sum, lot) => sum + lot.cost * lot.total,
+    0,
+  );
 
   const reserved = lots.reduce((sum, lot) => sum + lot.reserved, 0);
 
@@ -996,6 +1144,14 @@ function InventoryTab() {
               </FilterBtn>
             ))}
           </div>
+
+          <button
+            onClick={() => setNewLotOpen(true)}
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-[11.5px] font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="size-3.5" />
+            New lot / Adjust stock
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -1008,139 +1164,119 @@ function InventoryTab() {
                 <Th className="text-right">Available</Th>
                 <Th className="text-right">Reserved</Th>
                 <Th>Expires</Th>
-                <Th>FEFO</Th>
                 <Th>Status</Th>
-                <Th />
+                <Th className="text-right">Actions</Th>
               </tr>
             </thead>
 
             <tbody>
-              {loadingLots ? (
+              {loadingLots && (
                 <tr>
-                  <td colSpan={9}>
-                    <div className="py-6 text-center text-muted-foreground">
-                      Loading inventory lots...
-                    </div>
+                  <td
+                    colSpan={8}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    Loading lots...
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
+              )}
+
+              {!loadingLots && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9}>
-                    <div className="py-6 text-center text-muted-foreground">
-                      No inventory lots found.
-                    </div>
+                  <td
+                    colSpan={8}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    No inventory lots found
                   </td>
                 </tr>
-              ) : (
-                filtered.map((lot, index) => {
-                  const expiringSoon =
-                    lot.daysToExpiry > 0 && lot.daysToExpiry <= 60;
+              )}
 
-                  const expired = lot.daysToExpiry <= 0;
-
-                  return (
-                    <tr
-                      key={lot.id}
-                      className="border-t border-border hover:bg-accent/30 transition-colors"
-                    >
-                      <Td>
-                        <Link
-                          to="/inventory/lots/$lotId"
-                          params={{ lotId: lot.id }}
-                          className="font-mono text-[11px] text-primary hover:underline"
-                        >
-                          {lot.id}
-                        </Link>
-
-                        <p className="text-[10px] text-muted-foreground">
-                          {lot.manufacturerLot}
+              {!loadingLots &&
+                filtered.map((lot) => (
+                  <tr
+                    key={lot.id}
+                    className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors"
+                  >
+                    <Td>
+                      <div>
+                        <p className="font-mono text-[11px] font-semibold text-primary">
+                          {lot.manufacturerLot !== "—"
+                            ? lot.manufacturerLot
+                            : lot.internalLotCode}
                         </p>
-                      </Td>
 
-                      <Td>
-                        <p className="font-semibold text-foreground">
+                        <p className="text-[10.5px] text-muted-foreground">
+                          Internal: {lot.internalLotCode}
+                        </p>
+                      </div>
+                    </Td>
+
+                    <Td>
+                      <div>
+                        <p className="font-medium text-foreground">
                           {lot.product}
                         </p>
 
                         <p className="text-[10.5px] text-muted-foreground">
-                          {lot.supplier}
-                        </p>
-                      </Td>
-
-                      <Td>
-                        <p className="text-foreground">{lot.location}</p>
-
-                        <p className="text-[10.5px] text-muted-foreground inline-flex items-center gap-1">
-                          {lot.coldChain && (
-                            <Snowflake className="size-2.5 text-primary" />
-                          )}
-
                           {lot.tempRequirement}
                         </p>
-                      </Td>
+                      </div>
+                    </Td>
 
-                      <Td className="text-right tabular-nums font-semibold">
-                        {lot.available}{" "}
-                        <span className="text-muted-foreground font-normal">
-                          {lot.unit}
-                        </span>
-                      </Td>
-
-                      <Td className="text-right tabular-nums text-muted-foreground">
-                        {lot.reserved}
-                      </Td>
-
-                      <Td>
-                        <p
-                          className={cn(
-                            "font-medium",
-                            expired && "text-critical",
-                            expiringSoon && "text-warning",
-                          )}
-                        >
-                          {lot.expiry}
+                    <Td>
+                      <div>
+                        <p>{lot.location}</p>
+                        <p className="text-[10.5px] text-muted-foreground">
+                          Supplier: {lot.supplier}
                         </p>
+                      </div>
+                    </Td>
 
-                        <p className="text-[10px] text-muted-foreground">
-                          {expired
-                            ? `${Math.abs(lot.daysToExpiry)}d ago`
-                            : `in ${lot.daysToExpiry}d`}
-                        </p>
-                      </Td>
+                    <Td className="text-right tabular-nums">
+                      <span className="font-semibold">
+                        {lot.available} {lot.unit}
+                      </span>
+                    </Td>
 
-                      <Td>
-                        {index === 0 && <Pill tone="primary">#1 FEFO</Pill>}
-                        {index === 1 && <Pill tone="muted">#2</Pill>}
-                      </Td>
+                    <Td className="text-right tabular-nums">
+                      {lot.reserved} {lot.unit}
+                    </Td>
 
-                      <Td>
-                        <InventoryLotStatusBadge status={lot.status} />
-                      </Td>
+                    <Td>
+                      <div>
+                        <p>{lot.expiry}</p>
 
-                      <Td>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setAdjLot(lot.id)}
-                            className="size-7 rounded hover:bg-secondary inline-flex items-center justify-center text-muted-foreground"
-                            title="Adjust inventory"
+                        {lot.daysToExpiry > 0 && (
+                          <p
+                            className={cn(
+                              "text-[10.5px]",
+                              lot.daysToExpiry <= 60
+                                ? "text-warning"
+                                : "text-muted-foreground",
+                            )}
                           >
-                            <Pencil className="size-3.5" />
-                          </button>
+                            {lot.daysToExpiry} days
+                          </p>
+                        )}
+                      </div>
+                    </Td>
 
-                          <Link
-                            to="/inventory/lots/$lotId"
-                            params={{ lotId: lot.id }}
-                            className="size-7 rounded hover:bg-secondary inline-flex items-center justify-center text-muted-foreground"
-                            title="View lot"
-                          >
-                            <Eye className="size-3.5" />
-                          </Link>
-                        </div>
-                      </Td>
-                    </tr>
-                  );
-                })
-              )}
+                    <Td>
+                      <InventoryLotStatusBadge status={lot.status} />
+                    </Td>
+
+                    <Td className="text-right">
+                      <button
+                        onClick={() => setAdjLot(lot.id)}
+                        className="inline-flex items-center gap-1 h-8 px-2.5 text-[11.5px] font-medium rounded-md border border-border bg-card hover:bg-secondary"
+                      >
+                        <ArrowRightLeft className="size-3.5" />
+                        Adjust stock
+                      </button>
+                    </Td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -1152,6 +1288,16 @@ function InventoryTab() {
           onClose={() => setAdjLot(null)}
           onAdjusted={() => {
             setAdjLot(null);
+            loadLots();
+          }}
+        />
+      )}
+
+      {newLotOpen && (
+        <NewInventoryLotPanel
+          onClose={() => setNewLotOpen(false)}
+          onCreated={() => {
+            setNewLotOpen(false);
             loadLots();
           }}
         />
@@ -1177,15 +1323,10 @@ function AdjustmentPanel({
   const [saving, setSaving] = useState(false);
 
   const [lot, setLot] = useState<any | null>(null);
-
   const [adjustmentType, setAdjustmentType] =
     useState<InventoryAdjustmentType>("ADD_STOCK");
-
   const [quantity, setQuantity] = useState("");
-
-  const [reason, setReason] = useState(
-    "Inventory increase due to received stock",
-  );
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     loadLot();
@@ -1200,31 +1341,21 @@ function AdjustmentPanel({
         id,
         clinic_id,
         product_id,
-        supplier_id,
         location_id,
         internal_lot_code,
         manufacturer_lot,
         expiration_date,
-        manufacture_date,
         status,
         quantity_initial,
         quantity_available,
         quantity_reserved,
         quantity_consumed,
         unit_cost,
-        received_at,
 
         products (
           id,
           name,
-          unit_of_measure,
-          presentation,
-          storage_condition
-        ),
-
-        suppliers (
-          id,
-          name
+          unit_of_measure
         ),
 
         locations (
@@ -1235,306 +1366,186 @@ function AdjustmentPanel({
       .eq("id", lotId)
       .single();
 
-    console.log("ADJUSTMENT LOT", data);
-    console.log("ADJUSTMENT LOT ERROR", error);
+    if (error) {
+      console.error("Error loading lot for adjustment:", error);
 
-    if (error || !data) {
-      console.error(error);
+      runMockAction("Loading lot", {
+        error: error.message,
+      });
+
       setLot(null);
       setLoading(false);
       return;
     }
 
-    setLot(data);
+    setLot({
+      ...data,
+      products: normalizeInventoryRelation(data.products),
+      locations: normalizeInventoryRelation(data.locations),
+    });
+
     setLoading(false);
   }
 
-  function getAdjustmentLabel(type: InventoryAdjustmentType) {
-    const labels: Record<InventoryAdjustmentType, string> = {
-      ADD_STOCK: "Add inventory",
-      REMOVE_STOCK: "Remove inventory",
-      DAMAGE_LOSS: "Damage / loss",
-      DESTROY_STOCK: "Destroy inventory",
-      QUARANTINE: "Move to quarantine",
-      BLOCK: "Block lot",
-      RELEASE: "Release lot",
-    };
+  async function applyAdjustment() {
+    if (!lot) return;
 
-    return labels[type];
-  }
+    const qty = Number(quantity || 0);
 
-  function getMovementType(type: InventoryAdjustmentType) {
-    const map: Record<InventoryAdjustmentType, string> = {
-      ADD_STOCK: "adjustment_in",
-      REMOVE_STOCK: "adjustment_out",
-      DAMAGE_LOSS: "damage_loss",
-      DESTROY_STOCK: "destruction",
-      QUARANTINE: "quarantine",
-      BLOCK: "block",
-      RELEASE: "release",
-    };
-
-    return map[type];
-  }
-
-  function requiresQuantity(type: InventoryAdjustmentType) {
-    return (
-      type === "ADD_STOCK" ||
-      type === "REMOVE_STOCK" ||
-      type === "DAMAGE_LOSS" ||
-      type === "DESTROY_STOCK"
-    );
-  }
-
-  function getDefaultReason(type: InventoryAdjustmentType) {
-    const map: Record<InventoryAdjustmentType, string> = {
-      ADD_STOCK: "Inventory increase due to received stock",
-      REMOVE_STOCK: "Manual inventory decrease",
-      DAMAGE_LOSS: "Inventory decrease due to damage or loss",
-      DESTROY_STOCK: "Inventory destruction / disposal",
-      QUARANTINE: "Lot moved to quarantine for review",
-      BLOCK: "Lot blocked from clinical use",
-      RELEASE: "Lot released back to available inventory",
-    };
-
-    return map[type];
-  }
-
-  function calculateNewValues() {
-    if (!lot) return null;
-
-    const currentInitial = Number(lot.quantity_initial ?? 0);
-    const currentAvailable = Number(lot.quantity_available ?? 0);
-    const currentReserved = Number(lot.quantity_reserved ?? 0);
-    const currentConsumed = Number(lot.quantity_consumed ?? 0);
-
-    const qty = requiresQuantity(adjustmentType)
-      ? Number(quantity || 0)
-      : 0;
-
-    let newInitial = currentInitial;
-    let newAvailable = currentAvailable;
-    const newReserved = currentReserved;
-    let newConsumed = currentConsumed;
-    let newStatus = String(lot.status ?? "available").toLowerCase();
-
-    if (adjustmentType === "ADD_STOCK") {
-      newInitial = currentInitial + qty;
-      newAvailable = currentAvailable + qty;
-
-      if (
-        newStatus === "consumed" ||
-        newStatus === "destroyed" ||
-        newStatus === "expired"
-      ) {
-        newStatus = "available";
-      }
-    }
-
-    if (adjustmentType === "REMOVE_STOCK") {
-      newAvailable = currentAvailable - qty;
-      newConsumed = currentConsumed + qty;
-
-      if (newAvailable <= 0 && currentReserved <= 0) {
-        newStatus = "consumed";
-      }
-    }
-
-    if (adjustmentType === "DAMAGE_LOSS") {
-      newAvailable = currentAvailable - qty;
-      newConsumed = currentConsumed + qty;
-
-      if (newAvailable <= 0 && currentReserved <= 0) {
-        newStatus = "blocked";
-      }
-    }
-
-    if (adjustmentType === "DESTROY_STOCK") {
-      newAvailable = currentAvailable - qty;
-      newConsumed = currentConsumed + qty;
-
-      if (newAvailable <= 0 && currentReserved <= 0) {
-        newStatus = "destroyed";
-      }
-    }
-
-    if (adjustmentType === "QUARANTINE") {
-      newStatus = "quarantined";
-    }
-
-    if (adjustmentType === "BLOCK") {
-      newStatus = "blocked";
-    }
-
-    if (adjustmentType === "RELEASE") {
-      newStatus = "available";
-    }
-
-    return {
-      currentInitial,
-      currentAvailable,
-      currentReserved,
-      currentConsumed,
-      qty,
-      newInitial,
-      newAvailable,
-      newReserved,
-      newConsumed,
-      newStatus,
-    };
-  }
-
-  async function handleSaveAdjustment() {
-    if (!lot) {
-      runMockAction("Adjusting inventory", {
-        error: "Lot was not found",
-      });
-      return;
-    }
-
-    const values = calculateNewValues();
-
-    if (!values) {
-      runMockAction("Adjusting inventory", {
-        error: "Could not calculate inventory adjustment",
-      });
-      return;
-    }
-
-    if (requiresQuantity(adjustmentType)) {
-      if (!quantity || Number(quantity) <= 0) {
-        runMockAction("Adjusting inventory", {
-          error: "Quantity must be greater than zero",
-        });
-        return;
-      }
-    }
-
-    if (
-      adjustmentType !== "ADD_STOCK" &&
-      requiresQuantity(adjustmentType) &&
-      values.qty > values.currentAvailable
-    ) {
-      runMockAction("Adjusting inventory", {
-        error: "Quantity cannot be greater than available inventory",
-      });
-      return;
-    }
-
-    if (values.newAvailable < 0) {
-      runMockAction("Adjusting inventory", {
-        error: "Available quantity cannot be negative",
+    if (!qty || qty <= 0) {
+      runMockAction("Applying inventory adjustment", {
+        error: "La cantidad debe ser mayor que cero.",
       });
       return;
     }
 
     if (!reason.trim()) {
-      runMockAction("Adjusting inventory", {
-        error: "Reason is required",
+      runMockAction("Applying inventory adjustment", {
+        error: "Debes escribir una razón para el ajuste.",
       });
       return;
+    }
+
+    const currentAvailable = Number(lot.quantity_available ?? 0);
+    const currentReserved = Number(lot.quantity_reserved ?? 0);
+    const currentConsumed = Number(lot.quantity_consumed ?? 0);
+    const currentInitial = Number(lot.quantity_initial ?? 0);
+
+    let nextAvailable = currentAvailable;
+    let nextReserved = currentReserved;
+    let nextConsumed = currentConsumed;
+    let nextInitial = currentInitial;
+    let nextStatus = String(lot.status ?? "available").toLowerCase();
+
+    let movementType = "adjustment";
+    let movementQuantity = qty;
+
+    if (adjustmentType === "ADD_STOCK") {
+      nextAvailable = currentAvailable + qty;
+      nextInitial = currentInitial + qty;
+      nextStatus = "available";
+      movementType = "adjustment_add";
+    }
+
+    if (adjustmentType === "REMOVE_STOCK") {
+      if (qty > currentAvailable) {
+        runMockAction("Applying inventory adjustment", {
+          error: "No puedes retirar más unidades de las disponibles.",
+        });
+        return;
+      }
+
+      nextAvailable = currentAvailable - qty;
+      movementType = "adjustment_remove";
+    }
+
+    if (adjustmentType === "DAMAGE_LOSS") {
+      if (qty > currentAvailable) {
+        runMockAction("Applying inventory adjustment", {
+          error: "No puedes registrar pérdida mayor al disponible.",
+        });
+        return;
+      }
+
+      nextAvailable = currentAvailable - qty;
+      nextConsumed = currentConsumed + qty;
+      movementType = "damage_loss";
+    }
+
+    if (adjustmentType === "DESTROY_STOCK") {
+      if (qty > currentAvailable) {
+        runMockAction("Applying inventory adjustment", {
+          error: "No puedes destruir más unidades de las disponibles.",
+        });
+        return;
+      }
+
+      nextAvailable = currentAvailable - qty;
+      nextConsumed = currentConsumed + qty;
+      nextStatus = "destroyed";
+      movementType = "destroyed";
+    }
+
+    if (adjustmentType === "QUARANTINE") {
+      nextStatus = "quarantined";
+      movementQuantity = 0;
+      movementType = "quarantine";
+    }
+
+    if (adjustmentType === "BLOCK") {
+      nextStatus = "blocked";
+      movementQuantity = 0;
+      movementType = "blocked";
+    }
+
+    if (adjustmentType === "RELEASE") {
+      nextStatus = nextAvailable > 0 ? "available" : "consumed";
+      movementQuantity = 0;
+      movementType = "released";
     }
 
     setSaving(true);
 
-    const movementPayload = {
-      id: crypto.randomUUID(),
+    const now = inventoryTimestampWithoutTimezone(new Date());
 
-      clinic_id: lot.clinic_id ?? null,
-      lot_id: lot.id,
-      inventory_reservation_id: null,
-
-      movement_type: getMovementType(adjustmentType),
-
-      source_location_id:
-        adjustmentType === "ADD_STOCK" ? null : lot.location_id ?? null,
-
-      destination_location_id:
-        adjustmentType === "ADD_STOCK" ||
-        adjustmentType === "RELEASE" ||
-        adjustmentType === "QUARANTINE"
-          ? lot.location_id ?? null
-          : null,
-
-      quantity: requiresQuantity(adjustmentType) ? values.qty : 0,
-
-      related_case_id: null,
-      related_patient_id: null,
-      related_procedure_id: null,
-      related_prescription_item_id: null,
-
-      performed_by: null,
-
-      reason: reason.trim(),
-      created_at: inventoryTimestampWithoutTimezone(new Date()),
-    };
-
-    const { error: movementError } = await supabase
-      .from("inventory_movements")
-      .insert(movementPayload);
-
-    console.log("INVENTORY MOVEMENT PAYLOAD", movementPayload);
-    console.log("INVENTORY MOVEMENT ERROR", movementError);
-
-    if (movementError) {
-      console.error(movementError);
-
-      runMockAction("Adjusting inventory", {
-        error: movementError.message,
-      });
-
-      setSaving(false);
-      return;
-    }
-
-    const { error: lotUpdateError } = await supabase
+    const { error: updateError } = await supabase
       .from("inventory_lots")
       .update({
-        quantity_initial: values.newInitial,
-        quantity_available: values.newAvailable,
-        quantity_reserved: values.newReserved,
-        quantity_consumed: values.newConsumed,
-        status: values.newStatus,
+        quantity_initial: nextInitial,
+        quantity_available: nextAvailable,
+        quantity_reserved: nextReserved,
+        quantity_consumed: nextConsumed,
+        status: nextStatus,
       })
       .eq("id", lot.id);
 
-    console.log("INVENTORY LOT UPDATE ERROR", lotUpdateError);
+    if (updateError) {
+      console.error("Error applying inventory adjustment:", updateError);
 
-    if (lotUpdateError) {
-      console.error(lotUpdateError);
-
-      runMockAction("Adjusting inventory", {
-        error:
-          "Movement was created, but lot quantities could not be updated",
+      runMockAction("Applying inventory adjustment", {
+        error: updateError.message,
       });
 
       setSaving(false);
       return;
     }
 
-    runMockAction("Adjusting inventory", {
-      success: "Inventory adjusted successfully",
+    const { error: movementError } = await supabase
+      .from("inventory_movements")
+      .insert({
+        id: crypto.randomUUID(),
+        clinic_id: lot.clinic_id,
+        lot_id: lot.id,
+        inventory_reservation_id: null,
+        movement_type: movementType,
+        source_location_id: lot.location_id,
+        destination_location_id: lot.location_id,
+        quantity: movementQuantity,
+        related_case_id: null,
+        related_patient_id: null,
+        related_procedure_id: null,
+        related_prescription_item_id: null,
+        performed_by: null,
+        reason: reason.trim(),
+        created_at: now,
+      });
+
+    if (movementError) {
+      console.error("Inventory adjustment movement was not created:", movementError);
+    }
+
+    runMockAction("Applying inventory adjustment", {
+      success: "Inventory lot adjusted successfully.",
     });
 
     setSaving(false);
     onAdjusted();
   }
 
-  const values = calculateNewValues();
-
-  const product = normalizeInventoryRelation<any>(lot?.products);
-  const supplier = normalizeInventoryRelation<any>(lot?.suppliers);
-  const location = normalizeInventoryRelation<any>(lot?.locations);
-
-  const productName = product?.name ?? "Unknown product";
-  const supplierName = supplier?.name ?? "Unknown supplier";
-  const locationName = location?.name ?? "Unknown warehouse";
-  const unit = product?.unit_of_measure ?? "units";
-
   return (
     <Panel
-      title="Adjust inventory"
-      subtitle={loading ? "Loading lot..." : `${productName} · ${lotId}`}
+      title="Adjust stock"
+      subtitle={lot?.products?.name ?? lotId}
       onClose={onClose}
       width="max-w-2xl"
       footer={
@@ -1548,218 +1559,87 @@ function AdjustmentPanel({
           </button>
 
           <button
-            onClick={handleSaveAdjustment}
+            onClick={applyAdjustment}
             disabled={saving || loading || !lot}
             className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Apply adjustment"}
+            {saving ? "Applying..." : "Apply adjustment"}
           </button>
         </div>
       }
     >
       {loading ? (
-        <div className="text-[12px] text-muted-foreground">
-          Loading lot information...
-        </div>
+        <div className="text-[12px] text-muted-foreground">Loading lot...</div>
       ) : !lot ? (
-        <div className="rounded-md border border-critical/30 bg-critical/5 px-3 py-2.5 text-[12px] text-critical">
-          Lot could not be loaded.
+        <div className="text-[12px] text-muted-foreground">
+          Lot not found.
         </div>
       ) : (
         <div className="space-y-5">
-          <section className="rounded-xl border border-border bg-card p-4 space-y-4">
-            <div>
-              <h3 className="text-[13px] font-semibold">Lot information</h3>
-
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Review current inventory before applying an adjustment.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Product">{productName}</Field>
-
-              <Field label="Supplier">{supplierName}</Field>
-
-              <Field label="Warehouse">{locationName}</Field>
-
-              <Field label="Manufacturer lot">
-                {lot.manufacturer_lot ?? "—"}
+          <section className="rounded-xl border border-border bg-secondary/30 p-4">
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <Field label="Product">{lot.products?.name ?? "-"}</Field>
+              <Field label="Lot">
+                {lot.manufacturer_lot ?? lot.internal_lot_code ?? lot.id}
               </Field>
-
-              <Field label="Available">
-                {Number(lot.quantity_available ?? 0)} {unit}
-              </Field>
-
-              <Field label="Reserved">
-                {Number(lot.quantity_reserved ?? 0)} {unit}
-              </Field>
-
-              <Field label="Initial quantity">
-                {Number(lot.quantity_initial ?? 0)} {unit}
-              </Field>
-
-              <Field label="Consumed / removed">
-                {Number(lot.quantity_consumed ?? 0)} {unit}
-              </Field>
-
+              <Field label="Warehouse">{lot.locations?.name ?? "-"}</Field>
               <Field label="Status">
                 <InventoryLotStatusBadge
-                  status={String(lot.status ?? "available")}
+                  status={normalizeInventoryLotStatus(lot.status)}
                 />
+              </Field>
+              <Field label="Available">
+                {Number(lot.quantity_available ?? 0)}{" "}
+                {lot.products?.unit_of_measure ?? "units"}
+              </Field>
+              <Field label="Reserved">
+                {Number(lot.quantity_reserved ?? 0)}{" "}
+                {lot.products?.unit_of_measure ?? "units"}
               </Field>
             </div>
           </section>
 
           <section className="rounded-xl border border-border bg-card p-4 space-y-4">
-            <div>
-              <h3 className="text-[13px] font-semibold">
-                Adjustment operation
-              </h3>
+            <label className="space-y-1.5 block">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                Adjustment type
+              </span>
 
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Add stock when new inventory arrives, or remove stock for damage,
-                destruction, manual correction or blocking.
-              </p>
-            </div>
+              <select
+                value={adjustmentType}
+                onChange={(event) =>
+                  setAdjustmentType(event.target.value as InventoryAdjustmentType)
+                }
+                className="h-9 w-full rounded-md border border-border bg-card px-3 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="ADD_STOCK">Add stock</option>
+                <option value="REMOVE_STOCK">Remove stock</option>
+                <option value="DAMAGE_LOSS">Damage / loss</option>
+                <option value="DESTROY_STOCK">Destroy stock</option>
+                <option value="QUARANTINE">Send to quarantine</option>
+                <option value="BLOCK">Block lot</option>
+                <option value="RELEASE">Release lot</option>
+              </select>
+            </label>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="space-y-1.5 block">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Adjustment type
-                </span>
+            <Input
+              label="Quantity"
+              type="number"
+              value={quantity}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                setQuantity(event.target.value)
+              }
+            />
 
-                <select
-                  value={adjustmentType}
-                  onChange={(event) => {
-                    const nextType =
-                      event.target.value as InventoryAdjustmentType;
-
-                    setAdjustmentType(nextType);
-                    setReason(getDefaultReason(nextType));
-
-                    if (!requiresQuantity(nextType)) {
-                      setQuantity("");
-                    }
-                  }}
-                  className="h-9 w-full rounded-md border border-border bg-card px-3 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="ADD_STOCK">Add inventory</option>
-                  <option value="REMOVE_STOCK">Remove inventory</option>
-                  <option value="DAMAGE_LOSS">Damage / loss</option>
-                  <option value="DESTROY_STOCK">Destroy inventory</option>
-                  <option value="QUARANTINE">Move to quarantine</option>
-                  <option value="BLOCK">Block lot</option>
-                  <option value="RELEASE">Release lot</option>
-                </select>
-              </label>
-
-              {requiresQuantity(adjustmentType) ? (
-                <Input
-                  label={`Quantity (${unit})`}
-                  type="number"
-                  placeholder="0"
-                  value={quantity}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                    setQuantity(event.target.value)
-                  }
-                />
-              ) : (
-                <Field label="Quantity">No quantity change</Field>
-              )}
-
-              <div className="col-span-2">
-                <label className="space-y-1.5 block">
-                  <span className="text-[11px] font-medium text-muted-foreground">
-                    Reason
-                  </span>
-
-                  <textarea
-                    value={reason}
-                    onChange={(event) => setReason(event.target.value)}
-                    rows={3}
-                    placeholder="Explain why this adjustment is being applied..."
-                    className="w-full rounded-md border border-border bg-card px-3 py-2 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </label>
-              </div>
-            </div>
+            <Textarea
+              label="Reason"
+              value={reason}
+              onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setReason(event.target.value)
+              }
+              placeholder="Write adjustment reason..."
+            />
           </section>
-
-          {values && (
-            <section className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
-              <div>
-                <h3 className="text-[13px] font-semibold">
-                  Adjustment preview
-                </h3>
-
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  These values will be written to the selected lot.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-[12px]">
-                <Field label="Operation">
-                  {getAdjustmentLabel(adjustmentType)}
-                </Field>
-
-                <Field label="Movement type">
-                  {getMovementType(adjustmentType)}
-                </Field>
-
-                <Field label="Available before">
-                  {values.currentAvailable}
-                </Field>
-
-                <Field label="Available after">
-                  {values.newAvailable}
-                </Field>
-
-                <Field label="Initial before">
-                  {values.currentInitial}
-                </Field>
-
-                <Field label="Initial after">
-                  {values.newInitial}
-                </Field>
-
-                <Field label="Consumed before">
-                  {values.currentConsumed}
-                </Field>
-
-                <Field label="Consumed after">
-                  {values.newConsumed}
-                </Field>
-
-                <Field label="New status">
-                  <InventoryLotStatusBadge status={values.newStatus} />
-                </Field>
-              </div>
-
-              {adjustmentType !== "ADD_STOCK" &&
-                requiresQuantity(adjustmentType) &&
-                values.qty > values.currentAvailable && (
-                  <div className="rounded-md border border-critical/30 bg-critical/5 px-3 py-2.5 text-[11.5px] text-critical">
-                    The quantity to remove cannot exceed available inventory.
-                  </div>
-                )}
-
-              {adjustmentType === "DESTROY_STOCK" && (
-                <div className="rounded-md border border-warning/30 bg-warning/5 px-3 py-2.5 text-[11.5px] text-warning">
-                  This operation records a destruction movement and reduces
-                  available inventory. Use it only for documented disposal,
-                  expiration, damage or authorized destruction.
-                </div>
-              )}
-
-              {adjustmentType === "DAMAGE_LOSS" && (
-                <div className="rounded-md border border-warning/30 bg-warning/5 px-3 py-2.5 text-[11.5px] text-warning">
-                  This operation reduces available inventory due to damage or
-                  loss. The movement will remain traceable in inventory history.
-                </div>
-              )}
-            </section>
-          )}
         </div>
       )}
     </Panel>
@@ -1767,40 +1647,563 @@ function AdjustmentPanel({
 }
 
 // ============================================================
-// INVENTORY LOCAL BADGE + HELPERS
+// NEW INVENTORY LOT PANEL
 // ============================================================
 
-function InventoryLotStatusBadge({ status }: { status: string }) {
+function NewInventoryLotPanel({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [products, setProducts] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [locations, setLocations] = useState<any[]>([]);
+
+  const [productId, setProductId] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [locationId, setLocationId] = useState("");
+
+  const [internalLotCode, setInternalLotCode] = useState("");
+  const [manufacturerLot, setManufacturerLot] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
+  const [manufactureDate, setManufactureDate] = useState("");
+
+  const [quantityInitial, setQuantityInitial] = useState("");
+  const [unitCost, setUnitCost] = useState("");
+  const [receivedAt, setReceivedAt] = useState(
+    toDatetimeLocalInputValue(new Date()),
+  );
+
+  useEffect(() => {
+    loadFormData();
+  }, []);
+
+  async function loadFormData() {
+    setLoading(true);
+
+    const [productsRes, suppliersRes, locationsRes] = await Promise.all([
+      supabase
+        .from("products")
+        .select(`
+          id,
+          clinic_id,
+          name,
+          generic_name,
+          presentation,
+          unit_of_measure,
+          active
+        `)
+        .eq("active", true)
+        .order("name", { ascending: true }),
+
+      supabase
+        .from("suppliers")
+        .select(`
+          id,
+          name
+        `)
+        .order("name", { ascending: true }),
+
+      supabase
+        .from("locations")
+        .select(`
+          id,
+          clinic_id,
+          name,
+          type,
+          active
+        `)
+        .eq("active", true)
+        .order("name", { ascending: true }),
+    ]);
+
+    if (productsRes.error) {
+      console.error("Error loading products for new lot:", productsRes.error);
+
+      runMockAction("Loading products", {
+        error: productsRes.error.message,
+      });
+    }
+
+    if (suppliersRes.error) {
+      console.error("Error loading suppliers for new lot:", suppliersRes.error);
+    }
+
+    if (locationsRes.error) {
+      console.error("Error loading locations for new lot:", locationsRes.error);
+
+      runMockAction("Loading locations", {
+        error: locationsRes.error.message,
+      });
+    }
+
+    const productRows = productsRes.data ?? [];
+    const supplierRows = suppliersRes.data ?? [];
+    const locationRows = locationsRes.data ?? [];
+
+    setProducts(productRows);
+    setSuppliers(supplierRows);
+    setLocations(locationRows);
+
+    if (productRows.length > 0) {
+      setProductId(productRows[0].id);
+    }
+
+    if (locationRows.length > 0) {
+      setLocationId(locationRows[0].id);
+    }
+
+    setLoading(false);
+  }
+
+  function selectedProduct() {
+    return products.find((product) => product.id === productId) ?? null;
+  }
+
+  function selectedLocation() {
+    return locations.find((location) => location.id === locationId) ?? null;
+  }
+
+  async function createInventoryLot() {
+    if (!productId) {
+      runMockAction("Creating inventory lot", {
+        error: "Selecciona un producto.",
+      });
+      return;
+    }
+
+    if (!locationId) {
+      runMockAction("Creating inventory lot", {
+        error: "Selecciona una bodega.",
+      });
+      return;
+    }
+
+    const qty = Number(quantityInitial || 0);
+
+    if (!qty || qty <= 0) {
+      runMockAction("Creating inventory lot", {
+        error: "La cantidad inicial debe ser mayor que cero.",
+      });
+      return;
+    }
+
+    if (!manufacturerLot.trim() && !internalLotCode.trim()) {
+      runMockAction("Creating inventory lot", {
+        error: "Debes ingresar lote interno o lote del fabricante.",
+      });
+      return;
+    }
+
+    setSaving(true);
+
+    const product = selectedProduct();
+    const location = selectedLocation();
+
+    const now = inventoryTimestampWithoutTimezone(new Date());
+    const lotId = crypto.randomUUID();
+
+    const finalInternalLotCode =
+      internalLotCode.trim() ||
+      generateInternalLotCode(product?.name ?? "LOT");
+
+    const payload = {
+      id: lotId,
+      clinic_id: product?.clinic_id ?? location?.clinic_id ?? null,
+      product_id: productId,
+      supplier_id: supplierId || null,
+      location_id: locationId,
+      internal_lot_code: finalInternalLotCode,
+      manufacturer_lot: manufacturerLot.trim() || null,
+      expiration_date: expirationDate || null,
+      manufacture_date: manufactureDate || null,
+      status: "available",
+      quantity_initial: qty,
+      quantity_available: qty,
+      quantity_reserved: 0,
+      quantity_consumed: 0,
+      unit_cost: unitCost ? Number(unitCost) : null,
+      received_at: receivedAt
+        ? datetimeLocalToTimestampWithoutTimezone(receivedAt)
+        : now,
+    };
+
+    const { error: lotError } = await supabase
+      .from("inventory_lots")
+      .insert(payload);
+
+    console.log("NEW INVENTORY LOT PAYLOAD", payload);
+    console.log("NEW INVENTORY LOT ERROR", lotError);
+
+    if (lotError) {
+      console.error("Error creating inventory lot:", lotError);
+
+      runMockAction("Creating inventory lot", {
+        error: lotError.message,
+      });
+
+      setSaving(false);
+      return;
+    }
+
+    const movementPayload = {
+      id: crypto.randomUUID(),
+      clinic_id: payload.clinic_id,
+      lot_id: lotId,
+      inventory_reservation_id: null,
+      movement_type: "initial_stock",
+      source_location_id: null,
+      destination_location_id: locationId,
+      quantity: qty,
+      related_case_id: null,
+      related_patient_id: null,
+      related_procedure_id: null,
+      related_prescription_item_id: null,
+      performed_by: null,
+      reason: "Manual lot creation from inventory master.",
+      created_at: now,
+    };
+
+    const { error: movementError } = await supabase
+      .from("inventory_movements")
+      .insert(movementPayload);
+
+    console.log("INITIAL STOCK MOVEMENT PAYLOAD", movementPayload);
+    console.log("INITIAL STOCK MOVEMENT ERROR", movementError);
+
+    if (movementError) {
+      console.error("Initial movement was not created:", movementError);
+
+      runMockAction("Creating inventory lot", {
+        success:
+          "Lote creado. Advertencia: no se pudo crear el movimiento inicial.",
+      });
+
+      setSaving(false);
+      onCreated();
+      return;
+    }
+
+    runMockAction("Creating inventory lot", {
+      success: "Lote creado correctamente.",
+    });
+
+    setSaving(false);
+    onCreated();
+  }
+
+  const product = selectedProduct();
+  const unit = product?.unit_of_measure ?? "units";
+
+  return (
+    <Panel
+      title="New inventory lot"
+      subtitle="Crear lote manual para un producto existente"
+      onClose={onClose}
+      width="max-w-3xl"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={createInventoryLot}
+            disabled={saving || loading}
+            className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            {saving ? "Creating..." : "Create lot"}
+          </button>
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="text-[12px] text-muted-foreground">
+          Loading products, suppliers and warehouses...
+        </div>
+      ) : (
+        <div className="space-y-5">
+          <section className="rounded-xl border border-border bg-card p-4 space-y-4">
+            <div>
+              <h3 className="text-[13px] font-semibold">Product and location</h3>
+
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                El producto viene de la tabla products. El lote se crea en
+                inventory_lots.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="space-y-1.5 block col-span-2">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Product
+                </span>
+
+                <select
+                  value={productId}
+                  onChange={(event) => setProductId(event.target.value)}
+                  className="h-9 w-full rounded-md border border-border bg-card px-3 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">Select product</option>
+
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                      {product.presentation ? ` · ${product.presentation}` : ""}
+                      {product.unit_of_measure
+                        ? ` · ${product.unit_of_measure}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-1.5 block">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Supplier
+                </span>
+
+                <select
+                  value={supplierId}
+                  onChange={(event) => setSupplierId(event.target.value)}
+                  className="h-9 w-full rounded-md border border-border bg-card px-3 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">No supplier</option>
+
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name ?? supplier.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="space-y-1.5 block">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Warehouse
+                </span>
+
+                <select
+                  value={locationId}
+                  onChange={(event) => setLocationId(event.target.value)}
+                  className="h-9 w-full rounded-md border border-border bg-card px-3 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">Select warehouse</option>
+
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name ?? location.id}
+                      {location.type ? ` · ${location.type}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-4 space-y-4">
+            <div>
+              <h3 className="text-[13px] font-semibold">Lot information</h3>
+
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Define el lote, cantidades, vencimiento y costo.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Internal lot code"
+                placeholder="Ej. LOT-2026-0001"
+                value={internalLotCode}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setInternalLotCode(event.target.value)
+                }
+              />
+
+              <Input
+                label="Manufacturer lot"
+                placeholder="Ej. MFG-ABC-123"
+                value={manufacturerLot}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setManufacturerLot(event.target.value)
+                }
+              />
+
+              <Input
+                label="Manufacture date"
+                type="date"
+                value={manufactureDate}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setManufactureDate(event.target.value)
+                }
+              />
+
+              <Input
+                label="Expiration date"
+                type="date"
+                value={expirationDate}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setExpirationDate(event.target.value)
+                }
+              />
+
+              <Input
+                label={`Initial quantity (${unit})`}
+                type="number"
+                placeholder="0"
+                value={quantityInitial}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setQuantityInitial(event.target.value)
+                }
+              />
+
+              <Input
+                label="Unit cost"
+                type="number"
+                placeholder="0"
+                value={unitCost}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setUnitCost(event.target.value)
+                }
+              />
+
+              <label className="space-y-1.5 block col-span-2">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Received at
+                </span>
+
+                <input
+                  type="datetime-local"
+                  value={receivedAt}
+                  onChange={(event) => setReceivedAt(event.target.value)}
+                  className="h-9 w-full rounded-md border border-border bg-card px-3 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
+            <div>
+              <h3 className="text-[13px] font-semibold">Preview</h3>
+
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Valores que se escribirán en inventory_lots.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-[12px]">
+              <Field label="Product">
+                {product?.name ?? "No product selected"}
+              </Field>
+
+              <Field label="Initial / available">
+                {Number(quantityInitial || 0)} {unit}
+              </Field>
+
+              <Field label="Reserved">0 {unit}</Field>
+
+              <Field label="Consumed">0 {unit}</Field>
+
+              <Field label="Status">
+                <InventoryLotStatusBadge status="available" />
+              </Field>
+
+              <Field label="Internal lot">
+                {internalLotCode.trim() || "Auto generated"}
+              </Field>
+            </div>
+          </section>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+// ============================================================
+// INVENTORY LOT STATUS BADGE
+// ============================================================
+function normalizeInventoryRelation<T>(
+  value: T | T[] | null | undefined,
+): T | null {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+function InventoryLotStatusBadge({
+  status,
+}: {
+  status: InventoryLotStatusLocal | string;
+}) {
   const normalized = normalizeInventoryLotStatus(status);
 
   const map: Record<
     InventoryLotStatusLocal,
-    { label: string; tone: Parameters<typeof Pill>[0]["tone"] }
+    {
+      label: string;
+      tone: Parameters<typeof Pill>[0]["tone"];
+    }
   > = {
-    available: { label: "Available", tone: "success" },
-    reserved: { label: "Reserved", tone: "primary" },
-    quarantined: { label: "Quarantined", tone: "warning" },
-    expired: { label: "Expired", tone: "critical" },
-    blocked: { label: "Blocked", tone: "critical" },
-    consumed: { label: "Consumed", tone: "muted" },
-    returned: { label: "Returned", tone: "muted" },
-    destroyed: { label: "Destroyed", tone: "muted" },
+    available: {
+      label: "Available",
+      tone: "success",
+    },
+
+    reserved: {
+      label: "Reserved",
+      tone: "primary",
+    },
+
+    quarantined: {
+      label: "Quarantined",
+      tone: "warning",
+    },
+
+    expired: {
+      label: "Expired",
+      tone: "critical",
+    },
+
+    blocked: {
+      label: "Blocked",
+      tone: "critical",
+    },
+
+    consumed: {
+      label: "Consumed",
+      tone: "muted",
+    },
+
+    returned: {
+      label: "Returned",
+      tone: "default",
+    },
+
+    destroyed: {
+      label: "Destroyed",
+      tone: "critical",
+    },
   };
 
-  const config = map[normalized];
-
-  return <Pill tone={config.tone}>{config.label}</Pill>;
+  return <Pill tone={map[normalized].tone}>{map[normalized].label}</Pill>;
 }
 
 function normalizeInventoryLotStatus(
-  value: string | null | undefined,
+  status: string | null | undefined,
 ): InventoryLotStatusLocal {
-  const normalized = String(value ?? "available").toLowerCase();
+  const normalized = String(status ?? "available").trim().toLowerCase();
 
-  if (normalized === "available") return "available";
   if (normalized === "reserved") return "reserved";
   if (normalized === "quarantined") return "quarantined";
-  if (normalized === "quarantine") return "quarantined";
   if (normalized === "expired") return "expired";
   if (normalized === "blocked") return "blocked";
   if (normalized === "consumed") return "consumed";
@@ -1810,26 +2213,43 @@ function normalizeInventoryLotStatus(
   return "available";
 }
 
-function normalizeInventoryRelation<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) return null;
+function generateInternalLotCode(productName: string) {
+  const clean = productName
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 4)
+    .padEnd(4, "X");
 
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
+  const date = new Date();
 
-  return value;
+  const year = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  const random = Math.floor(Math.random() * 9999)
+    .toString()
+    .padStart(4, "0");
+
+  return `${clean}-${year}${month}${day}-${random}`;
 }
 
-function inventoryTimestampWithoutTimezone(date: Date) {
+function toDatetimeLocalInputValue(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
-  const seconds = String(date.getSeconds()).padStart(2, "0");
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+function datetimeLocalToTimestampWithoutTimezone(value: string) {
+  if (!value) return inventoryTimestampWithoutTimezone(new Date());
+
+  return value.replace("T", " ") + ":00";
+}
+
+
 // ============================================================
 // 4. TRANSFERS TAB
 // ============================================================
@@ -4104,11 +4524,11 @@ function ProcedureKitOrderPanel({
 
                 {String(item.status ?? "").toUpperCase() ===
                   "INSUFFICIENT_STOCK" && (
-                  <div className="mt-3 rounded-md border border-warning/20 bg-warning/5 text-warning px-3 py-2 text-[11px] flex items-center gap-2">
-                    <AlertTriangle className="size-3.5" />
-                    Stock insuficiente para este insumo.
-                  </div>
-                )}
+                    <div className="mt-3 rounded-md border border-warning/20 bg-warning/5 text-warning px-3 py-2 text-[11px] flex items-center gap-2">
+                      <AlertTriangle className="size-3.5" />
+                      Stock insuficiente para este insumo.
+                    </div>
+                  )}
               </div>
             );
           })}
@@ -4836,17 +5256,17 @@ function ProcedureKitStatusBadge({ status }: { status: string }) {
 
   const tone: KitStatusTone =
     normalized === "VALIDATED" ||
-    normalized === "RESERVED" ||
-    normalized === "PREPARED_BY_PHARMACY" ||
-    normalized === "PREPARED" ||
-    normalized === "DELIVERED_TO_PROCEDURE" ||
-    normalized === "DELIVERED" ||
-    normalized === "CLOSED" ||
-    normalized === "USED"
+      normalized === "RESERVED" ||
+      normalized === "PREPARED_BY_PHARMACY" ||
+      normalized === "PREPARED" ||
+      normalized === "DELIVERED_TO_PROCEDURE" ||
+      normalized === "DELIVERED" ||
+      normalized === "CLOSED" ||
+      normalized === "USED"
       ? "success"
       : normalized === "DRAFT" ||
-          normalized === "VALIDATING" ||
-          normalized === "SENT_TO_PHARMACY"
+        normalized === "VALIDATING" ||
+        normalized === "SENT_TO_PHARMACY"
         ? "primary"
         : normalized === "INSUFFICIENT_STOCK"
           ? "warning"
@@ -5107,18 +5527,34 @@ function Input({ label, className = "", ...props }: InputProps) {
     </label>
   );
 }
-function Textarea({ label, placeholder }: { label: string; placeholder?: string }) {
+
+function Textarea({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value?: string;
+  onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+}) {
   return (
-    <label className="block">
-      <span className="text-[10.5px] uppercase tracking-wide text-muted-foreground font-medium">{label}</span>
+    <label className="space-y-1.5 block">
+      <span className="text-[11px] font-medium text-muted-foreground">
+        {label}
+      </span>
+
       <textarea
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
-        rows={3}
-        className="mt-1 w-full px-3 py-2 text-[12.5px] rounded-md border border-border bg-card focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-accent resize-none"
+        className="min-h-[80px] w-full rounded-md border border-border bg-card px-3 py-2 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
       />
     </label>
   );
 }
+
 type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   options: string[];
@@ -5174,23 +5610,356 @@ function Checkbox({ label, className = "", ...props }: CheckboxProps) {
 // ============================================================
 // PRODUCT DETAIL PANEL
 // ============================================================
-function ProductPanel({ product, onClose }: { product: MasterProduct; onClose: () => void }) {
-  const lots = LOTS.filter(l => l.product === product.name);
-  const movements = MOVEMENTS.filter(m => m.product === product.name).slice(0, 5);
+
+type ProductDetailLot = {
+  id: string;
+  clinic_id: string | null;
+  product_id: string | null;
+  location_id: string | null;
+  internal_lot_code: string | null;
+  manufacturer_lot: string | null;
+  expiration_date: string | null;
+  quantity_initial: number | null;
+  quantity_available: number | null;
+  quantity_reserved: number | null;
+  quantity_consumed: number | null;
+  status: string | null;
+  locations?: {
+    id: string;
+    name: string | null;
+  } | null;
+};
+
+type ProductDetailMovement = {
+  id: string;
+  clinic_id: string | null;
+  lot_id: string | null;
+  movement_type: string | null;
+  quantity: number | null;
+  reason: string | null;
+  created_at: string | null;
+  inventory_lots?: {
+    id: string;
+    product_id: string | null;
+    internal_lot_code: string | null;
+    manufacturer_lot: string | null;
+  } | null;
+};
+
+type ProductEditForm = {
+  name: string;
+  genericName: string;
+  category: string;
+  presentation: string;
+  unitOfMeasure: string;
+  storageCondition: string;
+  temperatureMin: string;
+  temperatureMax: string;
+  invimaRegistration: string;
+  active: boolean;
+  strengthValue: string;
+  productType: string;
+  brand: string;
+  manufacturer: string;
+  model: string;
+  referenceCode: string;
+  riskClass: string;
+  requiresPrescription: boolean;
+  requiresCalibration: boolean;
+  requiresMaintenance: boolean;
+  isReusable: boolean;
+  isSterile: boolean;
+};
+
+function ProductPanel({
+  product,
+  onClose,
+}: {
+  product: MasterProduct;
+  onClose: () => void;
+}) {
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [lots, setLots] = useState<ProductDetailLot[]>([]);
+  const [movements, setMovements] = useState<ProductDetailMovement[]>([]);
+
+  const [form, setForm] = useState<ProductEditForm>({
+    name: product.name ?? "",
+    genericName: product.generic ?? "",
+    category: product.category ?? "",
+    presentation: product.presentation ?? "",
+    unitOfMeasure: product.unit ?? "",
+    storageCondition: product.storage ?? "",
+    temperatureMin: String((product as any).temperature_min ?? ""),
+    temperatureMax: String((product as any).temperature_max ?? ""),
+    invimaRegistration: product.invima ?? "",
+    active: product.active ?? true,
+    strengthValue: String((product as any).strength_value ?? ""),
+    productType: (product as any).product_type ?? "",
+    brand: (product as any).brand ?? "",
+    manufacturer: (product as any).manufacturer ?? "",
+    model: (product as any).model ?? "",
+    referenceCode:
+      (product as any).reference_code ??
+      (product as any).reference ??
+      product.code ??
+      "",
+    riskClass: (product as any).risk_class ?? "",
+    requiresPrescription: Boolean((product as any).requires_prescription ?? false),
+    requiresCalibration: Boolean((product as any).requires_calibration ?? false),
+    requiresMaintenance: Boolean((product as any).requires_maintenance ?? false),
+    isReusable: Boolean((product as any).is_reusable ?? false),
+    isSterile: Boolean((product as any).is_sterile ?? false),
+  });
+
+  useEffect(() => {
+    loadProductInventoryDetail();
+  }, [product.id]);
+
+  async function loadProductInventoryDetail() {
+    if (!product.id) return;
+
+    setLoadingDetail(true);
+
+    const { data: lotRows, error: lotError } = await supabase
+      .from("inventory_lots")
+      .select(`
+    id,
+    clinic_id,
+    product_id,
+    location_id,
+    internal_lot_code,
+    manufacturer_lot,
+    expiration_date,
+    quantity_initial,
+    quantity_available,
+    quantity_reserved,
+    quantity_consumed,
+    status,
+    locations (
+      id,
+      name
+    )
+  `)
+      .eq("product_id", product.id)
+      .order("expiration_date", { ascending: true });
+
+    if (lotError) {
+      console.error("Error loading product lots:", lotError);
+      notify(
+        "Error",
+        lotError.message || "No se pudieron cargar los lotes del producto.",
+      );
+      setLots([]);
+    } else {
+      const normalizedLots = ((lotRows ?? []) as any[]).map((lot) => ({
+        ...lot,
+        locations: normalizeProductRelation(lot.locations),
+      }));
+
+      setLots(normalizedLots as ProductDetailLot[]);
+    }
+
+    const lotIds = ((lotRows ?? []) as any[]).map((lot) => lot.id);
+
+    if (lotIds.length > 0) {
+      const { data: movementRows, error: movementError } = await supabase
+        .from("inventory_movements")
+        .select(`
+          id,
+          clinic_id,
+          lot_id,
+          movement_type,
+          quantity,
+          reason,
+          created_at,
+          inventory_lots (
+            id,
+            product_id,
+            internal_lot_code,
+            manufacturer_lot
+          )
+        `)
+        .in("lot_id", lotIds)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (movementError) {
+        console.error("Error loading product movements:", movementError);
+        setMovements([]);
+      } else {
+        const normalizedMovements = ((movementRows ?? []) as any[]).map(
+          (movement) => ({
+            ...movement,
+            inventory_lots: normalizeProductRelation(movement.inventory_lots),
+          }),
+        );
+
+        setMovements(normalizedMovements as ProductDetailMovement[]);
+      }
+    } else {
+      setMovements([]);
+    }
+
+    setLoadingDetail(false);
+  }
+
+  async function saveProductChanges() {
+    if (!form.name.trim()) {
+      notify("Nombre requerido", "El nombre del producto es obligatorio.");
+      return;
+    }
+
+    if (!form.unitOfMeasure.trim()) {
+      notify("Unidad requerida", "La unidad de medida es obligatoria.");
+      return;
+    }
+
+    setSaving(true);
+
+    const payload = {
+      name: form.name.trim(),
+      generic_name: form.genericName.trim() || null,
+      category: form.category.trim() || null,
+      presentation: form.presentation.trim() || null,
+      unit_of_measure: form.unitOfMeasure.trim(),
+      storage_condition: form.storageCondition.trim() || null,
+      temperature_min: form.temperatureMin.trim()
+        ? Number(form.temperatureMin)
+        : null,
+      temperature_max: form.temperatureMax.trim()
+        ? Number(form.temperatureMax)
+        : null,
+      invima_registration: form.invimaRegistration.trim() || null,
+      active: form.active,
+      strength_value: form.strengthValue.trim()
+        ? Number(form.strengthValue)
+        : null,
+      product_type: form.productType.trim() || null,
+      brand: form.brand.trim() || null,
+      manufacturer: form.manufacturer.trim() || null,
+      model: form.model.trim() || null,
+      reference_code: form.referenceCode.trim() || null,
+      risk_class: form.riskClass.trim() || null,
+      requires_prescription: form.requiresPrescription,
+      requires_calibration: form.requiresCalibration,
+      requires_maintenance: form.requiresMaintenance,
+      is_reusable: form.isReusable,
+      is_sterile: form.isSterile,
+    };
+
+    const { error } = await supabase
+      .from("products")
+      .update(payload)
+      .eq("id", product.id);
+
+    if (error) {
+      console.error("Error updating product:", error);
+      notify("Error", error.message || "No se pudo actualizar el producto.");
+      setSaving(false);
+      return;
+    }
+
+    notify("Producto actualizado", "La información del producto fue guardada.");
+
+    window.dispatchEvent(new Event("inventory-products-refresh"));
+
+    setSaving(false);
+    await loadProductInventoryDetail();
+  }
+
+  async function toggleProductActive() {
+    setSaving(true);
+
+    const nextActive = !form.active;
+
+    const { error } = await supabase
+      .from("products")
+      .update({
+        active: nextActive,
+      })
+      .eq("id", product.id);
+
+    if (error) {
+      console.error("Error toggling product status:", error);
+      notify(
+        "Error",
+        error.message || "No se pudo cambiar el estado del producto.",
+      );
+      setSaving(false);
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      active: nextActive,
+    }));
+
+    notify(
+      nextActive ? "Producto activado" : "Producto desactivado",
+      nextActive
+        ? "El producto quedó disponible."
+        : "El producto quedó inactivo.",
+    );
+
+    window.dispatchEvent(new Event("inventory-products-refresh"));
+
+    setSaving(false);
+  }
+
+  const stockSummary = lots.reduce(
+    (summary, lot) => {
+      summary.available += Number(lot.quantity_available ?? 0);
+      summary.reserved += Number(lot.quantity_reserved ?? 0);
+      summary.consumed += Number(lot.quantity_consumed ?? 0);
+      summary.initial += Number(lot.quantity_initial ?? 0);
+
+      return summary;
+    },
+    {
+      available: 0,
+      reserved: 0,
+      consumed: 0,
+      initial: 0,
+    },
+  );
+
   return (
     <Panel
-      title={product.name}
-      subtitle={`${product.code} · ${product.generic}`}
+      title={form.name || product.name}
+      subtitle={`${form.referenceCode || product.id.slice(0, 8)} · ${form.genericName || "Sin genérico"
+        }`}
       onClose={onClose}
-      width="max-w-3xl"
+      width="max-w-5xl"
       footer={
         <div className="flex items-center justify-between gap-2">
-          <button onClick={() => runMockAction(product.active ? "Deactivating product" : "Activating product", { success: "Status updated" })} className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary inline-flex items-center gap-1.5">
-            <Power className="size-3.5" /> {product.active ? "Deactivate" : "Activate"}
+          <button
+            onClick={toggleProductActive}
+            disabled={saving}
+            className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Power className="size-3.5" />
+            {form.active ? "Deactivate" : "Activate"}
           </button>
+
           <div className="flex items-center gap-2">
-            <button onClick={onClose} className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary">Close</button>
-            <button onClick={() => runMockAction("Saving product", { success: "Product updated" })} className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90">Save changes</button>
+            <button
+              onClick={onClose}
+              disabled={saving}
+              className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary disabled:opacity-50"
+            >
+              Close
+            </button>
+
+            <button
+              onClick={saveProductChanges}
+              disabled={saving}
+              className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1.5"
+            >
+              {saving && <Loader2 className="size-3.5 animate-spin" />}
+              Save changes
+            </button>
           </div>
         </div>
       }
@@ -5200,97 +5969,433 @@ function ProductPanel({ product, onClose }: { product: MasterProduct; onClose: (
           <div className="size-16 rounded-lg bg-card border border-border flex items-center justify-center shrink-0">
             <PillIcon className="size-6 text-primary" />
           </div>
-          <div className="flex-1 grid grid-cols-3 gap-3 text-[12px]">
-            <Stat label="In stock" value={product.stock} />
-            <Stat label="Reserved" value={product.reserved} />
-            <Stat label="Linked kits" value={product.linkedKits} />
+
+          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
+            <Stat label="In stock" value={stockSummary.available} />
+            <Stat label="Reserved" value={stockSummary.reserved} />
+            <Stat label="Consumed" value={stockSummary.consumed} />
+            <Stat label="Lots" value={lots.length} />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Generic name">{product.generic}</Field>
-          <Field label="Category">{product.category}</Field>
-          <Field label="Presentation">{product.presentation}</Field>
-          <Field label="Reference">{product.reference}</Field>
-          <Field label="Unit of measure">{product.unit}</Field>
-          <Field label="Storage condition">
-            <span className="inline-flex items-center gap-1.5">
-              {product.coldChain && <Snowflake className="size-3.5 text-primary" />}
-              {product.storage}
-            </span>
-          </Field>
-          <Field label="INVIMA registration"><span className="font-mono text-[11px]">{product.invima}</span></Field>
-          <Field label="Status">
-            <div className="flex items-center gap-2">
-              {product.active ? <Pill tone="success">Active</Pill> : <Pill tone="muted">Inactive</Pill>}
-              {product.controlled && <Pill tone="warning">Controlled</Pill>}
+        <section>
+          <SectionHeader
+            title="Product information"
+            hint="Editable master data synchronized with products table"
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <ProductTextInput
+              label="Product name"
+              value={form.name}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, name: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Generic name"
+              value={form.genericName}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, genericName: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Category"
+              value={form.category}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, category: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Product type"
+              value={form.productType}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, productType: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Presentation"
+              value={form.presentation}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, presentation: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Unit of measure"
+              value={form.unitOfMeasure}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, unitOfMeasure: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Strength value"
+              type="number"
+              value={form.strengthValue}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, strengthValue: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="INVIMA registration"
+              value={form.invimaRegistration}
+              onChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  invimaRegistration: value,
+                }))
+              }
+            />
+
+            <ProductTextInput
+              label="Brand"
+              value={form.brand}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, brand: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Manufacturer"
+              value={form.manufacturer}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, manufacturer: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Model"
+              value={form.model}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, model: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Reference code"
+              value={form.referenceCode}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, referenceCode: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Risk class"
+              value={form.riskClass}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, riskClass: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Storage condition"
+              value={form.storageCondition}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, storageCondition: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Temperature min"
+              type="number"
+              value={form.temperatureMin}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, temperatureMin: value }))
+              }
+            />
+
+            <ProductTextInput
+              label="Temperature max"
+              type="number"
+              value={form.temperatureMax}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, temperatureMax: value }))
+              }
+            />
+
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+              <ProductCheckbox
+                label="Requires prescription"
+                checked={form.requiresPrescription}
+                onChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    requiresPrescription: value,
+                  }))
+                }
+              />
+
+              <ProductCheckbox
+                label="Requires calibration"
+                checked={form.requiresCalibration}
+                onChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    requiresCalibration: value,
+                  }))
+                }
+              />
+
+              <ProductCheckbox
+                label="Requires maintenance"
+                checked={form.requiresMaintenance}
+                onChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    requiresMaintenance: value,
+                  }))
+                }
+              />
+
+              <ProductCheckbox
+                label="Reusable"
+                checked={form.isReusable}
+                onChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    isReusable: value,
+                  }))
+                }
+              />
+
+              <ProductCheckbox
+                label="Sterile"
+                checked={form.isSterile}
+                onChange={(value) =>
+                  setForm((current) => ({
+                    ...current,
+                    isSterile: value,
+                  }))
+                }
+              />
+
+              <div className="flex items-center gap-2">
+                {form.active ? (
+                  <Pill tone="success">Active</Pill>
+                ) : (
+                  <Pill tone="muted">Inactive</Pill>
+                )}
+
+                {form.requiresPrescription && (
+                  <Pill tone="warning">Prescription</Pill>
+                )}
+              </div>
             </div>
-          </Field>
-        </div>
+          </div>
+        </section>
 
         <div>
-          <SectionHeader title="Suppliers" hint="Approved sources for this product" />
-          <div className="space-y-2">
-            {product.suppliers.map(sid => {
-              const s = SUPPLIERS.find(x => x.id === sid);
-              if (!s) return null;
-              return (
-                <div key={sid} className="flex items-center justify-between rounded-md border border-border px-3 py-2.5 text-[12px]">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="size-3.5 text-muted-foreground" />
+          <SectionHeader
+            title="Lots in stock"
+            hint={`${lots.length} lotes reales desde inventory_lots`}
+            action={
+              <button
+                onClick={loadProductInventoryDetail}
+                disabled={loadingDetail}
+                className="h-8 px-2.5 rounded-md border border-border bg-card hover:bg-secondary text-[11px] font-medium inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {loadingDetail ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-3" />
+                )}
+                Refresh
+              </button>
+            }
+          />
+
+          <div className="border border-border rounded-md overflow-hidden">
+            {loadingDetail && (
+              <p className="p-4 text-[12px] text-muted-foreground text-center">
+                Loading inventory lots...
+              </p>
+            )}
+
+            {!loadingDetail && lots.length === 0 && (
+              <p className="p-4 text-[12px] text-muted-foreground text-center">
+                No lots in inventory
+              </p>
+            )}
+
+            {!loadingDetail &&
+              lots.map((lot) => {
+                const available = Number(lot.quantity_available ?? 0);
+                const reserved = Number(lot.quantity_reserved ?? 0);
+                const consumed = Number(lot.quantity_consumed ?? 0);
+                const total = Number(lot.quantity_initial ?? 0);
+
+                return (
+                  <div
+                    key={lot.id}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-border last:border-0 text-[11.5px]"
+                  >
                     <div>
-                      <p className="font-medium">{s.name}</p>
-                      <p className="text-[10.5px] text-muted-foreground font-mono">{s.nit}</p>
+                      <p className="font-mono font-semibold text-primary">
+                        {lot.manufacturer_lot ??
+                          lot.internal_lot_code ??
+                          lot.id.slice(0, 8)}
+                      </p>
+
+                      <p className="text-muted-foreground">
+                        {lot.locations?.name ?? "No location"}
+                        {" · "}
+                        exp {lot.expiration_date ?? "-"}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="font-semibold tabular-nums">
+                        {available}/{total} {form.unitOfMeasure}
+                      </p>
+
+                      <p className="text-[10px] text-muted-foreground">
+                        Reserved {reserved} · Consumed {consumed}
+                      </p>
+
+                      <InventoryLotStatusBadge
+                        status={(lot.status ?? "available") as any}
+                      />
                     </div>
                   </div>
-                  <Pill tone={s.active ? "success" : "warning"}>{s.active ? "Active" : "Suspended"}</Pill>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 
         <div>
-          <SectionHeader title="Lots in stock" hint={`${lots.length} lots tracked`} />
-          <div className="border border-border rounded-md overflow-hidden">
-            {lots.length === 0 && <p className="p-4 text-[12px] text-muted-foreground text-center">No lots in inventory</p>}
-            {lots.map(l => (
-              <div key={l.id} className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-border last:border-0 text-[11.5px]">
-                <div>
-                  <p className="font-mono font-semibold text-primary">{l.id}</p>
-                  <p className="text-muted-foreground">{l.location} · exp {l.expiry}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold tabular-nums">{l.available}/{l.total} {l.unit}</p>
-                  <InventoryLotStatusBadge status={l.status} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          <SectionHeader
+            title="Recent movements"
+            hint="Last 5 inventory movements"
+          />
 
-        <div>
-          <SectionHeader title="Recent movements" hint="Last 5 events" />
           <ol className="space-y-2">
-            {movements.map(m => {
-              const meta = movementMeta(m.type);
+            {movements.map((movement) => {
+              const meta = movementMeta(
+                (movement.movement_type ?? "adjustment") as any,
+              );
+
+              const lotCode =
+                movement.inventory_lots?.manufacturer_lot ??
+                movement.inventory_lots?.internal_lot_code ??
+                movement.lot_id?.slice(0, 8) ??
+                "-";
+
               return (
-                <li key={m.id} className="flex items-center justify-between gap-3 text-[11.5px] border border-border rounded-md px-3 py-2">
+                <li
+                  key={movement.id}
+                  className="flex items-center justify-between gap-3 text-[11.5px] border border-border rounded-md px-3 py-2"
+                >
                   <div className="flex items-center gap-2">
-                    <Pill tone={meta.tone === "neutral" ? "muted" : meta.tone}>{meta.label}</Pill>
-                    <span className="text-foreground">{m.quantity} {m.unit}</span>
-                    <span className="text-muted-foreground">· {m.user}</span>
+                    <Pill tone={meta.tone === "neutral" ? "muted" : meta.tone}>
+                      {meta.label}
+                    </Pill>
+
+                    <span className="text-foreground">
+                      {Number(movement.quantity ?? 0)} {form.unitOfMeasure}
+                    </span>
+
+                    <span className="text-muted-foreground">
+                      · lote {lotCode}
+                    </span>
+
+                    {movement.reason && (
+                      <span className="text-muted-foreground">
+                        · {movement.reason}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-muted-foreground">{m.ts}</span>
+
+                  <span className="text-muted-foreground">
+                    {formatProductDetailDate(movement.created_at)}
+                  </span>
                 </li>
               );
             })}
-            {movements.length === 0 && <p className="text-[12px] text-muted-foreground text-center py-3">No recent activity</p>}
+
+            {!loadingDetail && movements.length === 0 && (
+              <p className="text-[12px] text-muted-foreground text-center py-3">
+                No recent activity
+              </p>
+            )}
           </ol>
         </div>
       </div>
     </Panel>
   );
+}
+
+function ProductTextInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: "text" | "number";
+}) {
+  return (
+    <label className="block">
+      <span className="text-[10.5px] uppercase tracking-wide text-muted-foreground font-medium">
+        {label}
+      </span>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-1 w-full h-9 px-3 text-[12.5px] rounded-md border border-border bg-card focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-accent"
+      />
+    </label>
+  );
+}
+
+function ProductCheckbox({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-[12px] text-foreground">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="size-4"
+      />
+
+      {label}
+    </label>
+  );
+}
+
+function normalizeProductRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value;
+}
+
+function formatProductDetailDate(value: string | null) {
+  if (!value) return "-";
+
+  return new Intl.DateTimeFormat("es-CO", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 // ============================================================
@@ -7742,4 +8847,15 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
       </div>
     </Panel>
   );
+}
+
+function inventoryTimestampWithoutTimezone(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }

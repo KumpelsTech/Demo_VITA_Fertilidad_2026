@@ -78,7 +78,12 @@ type NewFuturePatientForm = {
   lastName: string;
   phone: string;
   email: string;
+
+  documentType: string;
   documentNumber: string;
+  dateOfBirth: string;
+  gender: string;
+
   source: string;
   interestType: string;
   notes: string;
@@ -237,7 +242,12 @@ function CommunicationsPage() {
       lastName: "",
       phone: "",
       email: "",
+
+      documentType: "CC",
       documentNumber: "",
+      dateOfBirth: "",
+      gender: "",
+
       source: "",
       interestType: "",
       notes: "",
@@ -708,13 +718,17 @@ function CommunicationsPage() {
 
     const { error: personError } = await supabase.from("persons").insert({
       id: personId,
-      first_name: firstName,
-      last_name: lastName,
-      phone: phone || null,
+      first_name: newFuturePatient.firstName.trim(),
+      last_name: newFuturePatient.lastName.trim(),
+      phone: newFuturePatient.phone.trim() || null,
       email: newFuturePatient.email.trim() || null,
-      document_number: newFuturePatient.documentNumber.trim() || null,
-    });
 
+      document_type: newFuturePatient.documentType || null,
+      document_number: newFuturePatient.documentNumber.trim() || null,
+      birth_date: newFuturePatient.dateOfBirth || null,
+      gender: newFuturePatient.gender || null,
+
+    });
     if (personError) {
       console.error("Error creating person:", JSON.stringify(personError, null, 2));
       notify("Error", personError.message || "No se pudo crear la persona.");
@@ -769,7 +783,12 @@ function CommunicationsPage() {
       lastName: "",
       phone: "",
       email: "",
+
+      documentType: "CC",
       documentNumber: "",
+      dateOfBirth: "",
+      gender: "",
+
       source: "",
       interestType: "",
       notes: "",
@@ -1344,7 +1363,6 @@ function FuturePatientCard({ patient }: { patient: FuturePatient }) {
     </div>
   );
 }
-
 function NewFuturePatientForm({
   form,
   setForm,
@@ -1369,7 +1387,7 @@ function NewFuturePatientForm({
         <input
           value={form.firstName}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               firstName: event.target.value,
             }))
@@ -1381,7 +1399,7 @@ function NewFuturePatientForm({
         <input
           value={form.lastName}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               lastName: event.target.value,
             }))
@@ -1390,10 +1408,70 @@ function NewFuturePatientForm({
           className="h-9 rounded-md bg-secondary px-3 text-sm outline-none"
         />
 
+        <select
+          value={form.documentType}
+          onChange={(event) =>
+            setForm((current: NewFuturePatientForm) => ({
+              ...current,
+              documentType: event.target.value,
+            }))
+          }
+          className="h-9 rounded-md bg-secondary px-3 text-sm outline-none"
+        >
+          <option value="">Tipo de documento</option>
+          <option value="CC">Cédula de ciudadanía</option>
+          <option value="CE">Cédula de extranjería</option>
+          <option value="PA">Pasaporte</option>
+          <option value="TI">Tarjeta de identidad</option>
+          <option value="RC">Registro civil</option>
+          <option value="PEP">PEP</option>
+          <option value="PPT">PPT</option>
+          <option value="OTHER">Otro</option>
+        </select>
+
+        <input
+          value={form.documentNumber}
+          onChange={(event) =>
+            setForm((current: NewFuturePatientForm) => ({
+              ...current,
+              documentNumber: event.target.value,
+            }))
+          }
+          placeholder="Número de documento"
+          className="h-9 rounded-md bg-secondary px-3 text-sm outline-none"
+        />
+
+        <input
+          type="date"
+          value={form.dateOfBirth}
+          onChange={(event) =>
+            setForm((current: NewFuturePatientForm) => ({
+              ...current,
+              dateOfBirth: event.target.value,
+            }))
+          }
+          className="h-9 rounded-md bg-secondary px-3 text-sm outline-none"
+        />
+
+        <select
+          value={form.gender}
+          onChange={(event) =>
+            setForm((current: NewFuturePatientForm) => ({
+              ...current,
+              gender: event.target.value,
+            }))
+          }
+          className="h-9 rounded-md bg-secondary px-3 text-sm outline-none"
+        >
+          <option value="">Género</option>
+          <option value="FEMALE">Femenino</option>
+          <option value="MALE">Masculino</option>
+        </select>
+
         <input
           value={form.phone}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               phone: event.target.value,
             }))
@@ -1405,7 +1483,7 @@ function NewFuturePatientForm({
         <input
           value={form.email}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               email: event.target.value,
             }))
@@ -1415,21 +1493,9 @@ function NewFuturePatientForm({
         />
 
         <input
-          value={form.documentNumber}
-          onChange={(event) =>
-            setForm((current) => ({
-              ...current,
-              documentNumber: event.target.value,
-            }))
-          }
-          placeholder="Documento"
-          className="h-9 rounded-md bg-secondary px-3 text-sm outline-none"
-        />
-
-        <input
           value={form.source}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               source: event.target.value,
             }))
@@ -1441,7 +1507,7 @@ function NewFuturePatientForm({
         <input
           value={form.interestType}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               interestType: event.target.value,
             }))
@@ -1453,7 +1519,7 @@ function NewFuturePatientForm({
         <select
           value={form.priority}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               priority: event.target.value as Priority,
             }))
@@ -1470,20 +1536,21 @@ function NewFuturePatientForm({
         <input
           value={form.notes}
           onChange={(event) =>
-            setForm((current) => ({
+            setForm((current: NewFuturePatientForm) => ({
               ...current,
               notes: event.target.value,
             }))
           }
           placeholder="Notas"
-          className="h-9 rounded-md bg-secondary px-3 text-sm outline-none"
+          className="h-9 rounded-md bg-secondary px-3 text-sm outline-none md:col-span-3"
         />
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
         <button
           onClick={onCancel}
-          className="text-[12px] px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80"
+          disabled={creating}
+          className="text-[12px] px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 disabled:opacity-50"
         >
           Cancelar
         </button>

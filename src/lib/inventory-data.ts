@@ -333,6 +333,7 @@ export const QUALITY_ITEMS = [
 // MASTER CATALOG · Product registry (clinic-wide, not stock)
 // =================================================================
 export interface MasterProduct {
+  id: string;
   code: string;
   name: string;
   generic: string;
@@ -352,16 +353,16 @@ export interface MasterProduct {
 }
 
 export const PRODUCTS: MasterProduct[] = [
-  { code: "MED-001", name: "Gonal-F 900IU", generic: "Follitropin alfa", category: "Hormone", unit: "vial", presentation: "Pre-filled pen 900IU", reference: "GNL-900", storage: "2 – 8 °C", active: true, invima: "INVIMA 2019M-0019283", coldChain: true, controlled: false, suppliers: ["SUP-MRK"], stock: 12, reserved: 8, linkedKits: 1 },
-  { code: "MED-002", name: "Ovidrel 250mcg", generic: "Choriogonadotropin alfa", category: "Hormone", unit: "syringe", presentation: "Single-dose syringe", reference: "OVD-250", storage: "2 – 8 °C", active: true, invima: "INVIMA 2018M-0017721", coldChain: true, controlled: false, suppliers: ["SUP-MRK"], stock: 14, reserved: 12, linkedKits: 2 },
-  { code: "MED-003", name: "Cetrotide 0.25mg", generic: "Cetrorelix", category: "Medication", unit: "vial", presentation: "Powder + solvent vial", reference: "CET-025", storage: "Room temp · ≤25°C", active: true, invima: "INVIMA 2017M-0016654", coldChain: false, controlled: false, suppliers: ["SUP-FRR"], stock: 24, reserved: 6, linkedKits: 1 },
-  { code: "MED-004", name: "Progesterone 200mg", generic: "Micronized progesterone", category: "Hormone", unit: "capsule", presentation: "Soft-gel capsule", reference: "PRG-200", storage: "Room temp", active: true, invima: "INVIMA 2015M-0014412", coldChain: false, controlled: false, suppliers: ["SUP-BES"], stock: 60, reserved: 12, linkedKits: 2 },
-  { code: "LAB-005", name: "Embryo Culture Medium G-1 PLUS", generic: "Sequential culture medium", category: "IVF Media", unit: "bottle", presentation: "20 ml bottle", reference: "VIT-G1P", storage: "2 – 8 °C", active: true, invima: "INVIMA DM2018-0009921", coldChain: true, controlled: false, suppliers: ["SUP-VIT"], stock: 8, reserved: 0, linkedKits: 2 },
-  { code: "LAB-006", name: "Vitrification Kit Cryotop", generic: "Embryo vitrification kit", category: "Kit", unit: "kit", presentation: "Complete kit", reference: "KIT-VIT", storage: "Room temp", active: true, invima: "INVIMA DM2019-0010012", coldChain: false, controlled: false, suppliers: ["SUP-KIT"], stock: 4, reserved: 2, linkedKits: 1 },
-  { code: "LAB-007", name: "ICSI Pipette Set", generic: "Microinjection pipettes", category: "Supply", unit: "set", presentation: "Sterile set", reference: "ICS-001", storage: "Room temp", active: false, invima: "INVIMA DM2018-0008812", coldChain: false, controlled: false, suppliers: ["SUP-ORG"], stock: 0, reserved: 0, linkedKits: 1 },
-  { code: "LAB-008", name: "HSA Solution 5%", generic: "Human serum albumin", category: "Reagent", unit: "bottle", presentation: "10 ml bottle", reference: "HSA-05", storage: "2 – 8 °C", active: true, invima: "INVIMA 2017BM-0009123 · RECALL", coldChain: true, controlled: false, suppliers: ["SUP-VIT"], stock: 10, reserved: 0, linkedKits: 0 },
-  { code: "ANS-009", name: "Propofol 200mg", generic: "Propofol", category: "Anesthesia", unit: "ampoule", presentation: "20 ml ampoule", reference: "PRP-200", storage: "Room temp", active: true, invima: "INVIMA 2014M-0013381", coldChain: false, controlled: true, suppliers: ["SUP-FRR"], stock: 36, reserved: 6, linkedKits: 1 },
-  { code: "SUP-010", name: "Embryo Transfer Catheter", generic: "Soft-tip transfer catheter", category: "Supply", unit: "unit", presentation: "Sterile sealed", reference: "ETC-SFT", storage: "Room temp", active: true, invima: "INVIMA DM2020-0011023", coldChain: false, controlled: false, suppliers: ["SUP-COO"], stock: 22, reserved: 4, linkedKits: 1 },
+  { id: "1", code: "MED-001", name: "Gonal-F 900IU", generic: "Follitropin alfa", category: "Hormone", unit: "vial", presentation: "Pre-filled pen 900IU", reference: "GNL-900", storage: "2 – 8 °C", active: true, invima: "INVIMA 2019M-0019283", coldChain: true, controlled: false, suppliers: ["SUP-MRK"], stock: 12, reserved: 8, linkedKits: 1 },
+  { id: "2", code: "MED-002", name: "Ovidrel 250mcg", generic: "Choriogonadotropin alfa", category: "Hormone", unit: "syringe", presentation: "Single-dose syringe", reference: "OVD-250", storage: "2 – 8 °C", active: true, invima: "INVIMA 2018M-0017721", coldChain: true, controlled: false, suppliers: ["SUP-MRK"], stock: 14, reserved: 12, linkedKits: 2 },
+  { id: "3", code: "MED-003", name: "Cetrotide 0.25mg", generic: "Cetrorelix", category: "Medication", unit: "vial", presentation: "Powder + solvent vial", reference: "CET-025", storage: "Room temp · ≤25°C", active: true, invima: "INVIMA 2017M-0016654", coldChain: false, controlled: false, suppliers: ["SUP-FRR"], stock: 24, reserved: 6, linkedKits: 1 },
+  { id: "4", code: "MED-004", name: "Progesterone 200mg", generic: "Micronized progesterone", category: "Hormone", unit: "capsule", presentation: "Soft-gel capsule", reference: "PRG-200", storage: "Room temp", active: true, invima: "INVIMA 2015M-0014412", coldChain: false, controlled: false, suppliers: ["SUP-BES"], stock: 60, reserved: 12, linkedKits: 2 },
+  { id: "5", code: "LAB-005", name: "Embryo Culture Medium G-1 PLUS", generic: "Sequential culture medium", category: "IVF Media", unit: "bottle", presentation: "20 ml bottle", reference: "VIT-G1P", storage: "2 – 8 °C", active: true, invima: "INVIMA DM2018-0009921", coldChain: true, controlled: false, suppliers: ["SUP-VIT"], stock: 8, reserved: 0, linkedKits: 2 },
+  { id: "6", code: "LAB-006", name: "Vitrification Kit Cryotop", generic: "Embryo vitrification kit", category: "Kit", unit: "kit", presentation: "Complete kit", reference: "KIT-VIT", storage: "Room temp", active: true, invima: "INVIMA DM2019-0010012", coldChain: false, controlled: false, suppliers: ["SUP-KIT"], stock: 4, reserved: 2, linkedKits: 1 },
+  { id: "1", code: "LAB-007", name: "ICSI Pipette Set", generic: "Microinjection pipettes", category: "Supply", unit: "set", presentation: "Sterile set", reference: "ICS-001", storage: "Room temp", active: false, invima: "INVIMA DM2018-0008812", coldChain: false, controlled: false, suppliers: ["SUP-ORG"], stock: 0, reserved: 0, linkedKits: 1 },
+  { id: "1", code: "LAB-008", name: "HSA Solution 5%", generic: "Human serum albumin", category: "Reagent", unit: "bottle", presentation: "10 ml bottle", reference: "HSA-05", storage: "2 – 8 °C", active: true, invima: "INVIMA 2017BM-0009123 · RECALL", coldChain: true, controlled: false, suppliers: ["SUP-VIT"], stock: 10, reserved: 0, linkedKits: 0 },
+  { id: "1", code: "ANS-009", name: "Propofol 200mg", generic: "Propofol", category: "Anesthesia", unit: "ampoule", presentation: "20 ml ampoule", reference: "PRP-200", storage: "Room temp", active: true, invima: "INVIMA 2014M-0013381", coldChain: false, controlled: true, suppliers: ["SUP-FRR"], stock: 36, reserved: 6, linkedKits: 1 },
+  { id: "1", code: "SUP-010", name: "Embryo Transfer Catheter", generic: "Soft-tip transfer catheter", category: "Supply", unit: "unit", presentation: "Sterile sealed", reference: "ETC-SFT", storage: "Room temp", active: true, invima: "INVIMA DM2020-0011023", coldChain: false, controlled: false, suppliers: ["SUP-COO"], stock: 22, reserved: 4, linkedKits: 1 },
 ];
 
 // =================================================================
@@ -412,25 +413,37 @@ export interface Transfer {
 }
 
 export const TRANSFERS: Transfer[] = [
-  { id: "TRF-1042", created: "Today · 14:18", from: "Pharmacy A", to: "Procedure Room 1", requester: "Dr. E. Vance", receiver: "N. Ramírez", status: "in-transit", items: [
-    { product: "Ovidrel 250mcg", lot: "LOT-9034", qty: 1, unit: "syringe" },
-    { product: "Vitrification Kit Cryotop", lot: "LOT-8223", qty: 2, unit: "kits" },
-  ], reason: "Retrieval 16:00 — FC-2031" },
-  { id: "TRF-1041", created: "Today · 10:14", from: "Pharmacy A", to: "Emergency Cart", requester: "J. Pérez", receiver: "Pharmacy QA", status: "received", items: [
-    { product: "Progesterone 200mg", lot: "LOT-9200", qty: 12, unit: "capsules" },
-  ] },
-  { id: "TRF-1040", created: "Today · 09:32", from: "Cold Storage", to: "Lab Store", requester: "Embryology", receiver: "—", status: "approved", items: [
-    { product: "Embryo Culture Medium G-1 PLUS", lot: "LOT-8156", qty: 4, unit: "bottles" },
-  ], reason: "Replenish lab cold room 1" },
-  { id: "TRF-1039", created: "Today · 08:05", from: "Pharmacy A · Medellín", to: "Pharmacy A", requester: "Logistics", receiver: "—", status: "pending", items: [
-    { product: "Gonal-F 900IU", lot: "LOT-8921", qty: 4, unit: "vials" },
-  ], reason: "Inter-site rebalance — Bogotá shortage" },
-  { id: "TRF-1038", created: "Yesterday · 17:40", from: "Cold Storage", to: "Quarantine", requester: "system", receiver: "Pharmacy QA", status: "received", items: [
-    { product: "HSA Solution 5%", lot: "LOT-9311", qty: 10, unit: "bottles" },
-  ], reason: "INVIMA recall 2024-118 — block" },
-  { id: "TRF-1037", created: "Yesterday · 11:02", from: "Lab Store", to: "Cold Storage", requester: "Embryology", receiver: "—", status: "cancelled", items: [
-    { product: "ICSI Pipette Set", lot: "LOT-7740", qty: 2, unit: "sets" },
-  ], reason: "Lot expired before pickup" },
+  {
+    id: "TRF-1042", created: "Today · 14:18", from: "Pharmacy A", to: "Procedure Room 1", requester: "Dr. E. Vance", receiver: "N. Ramírez", status: "in-transit", items: [
+      { product: "Ovidrel 250mcg", lot: "LOT-9034", qty: 1, unit: "syringe" },
+      { product: "Vitrification Kit Cryotop", lot: "LOT-8223", qty: 2, unit: "kits" },
+    ], reason: "Retrieval 16:00 — FC-2031"
+  },
+  {
+    id: "TRF-1041", created: "Today · 10:14", from: "Pharmacy A", to: "Emergency Cart", requester: "J. Pérez", receiver: "Pharmacy QA", status: "received", items: [
+      { product: "Progesterone 200mg", lot: "LOT-9200", qty: 12, unit: "capsules" },
+    ]
+  },
+  {
+    id: "TRF-1040", created: "Today · 09:32", from: "Cold Storage", to: "Lab Store", requester: "Embryology", receiver: "—", status: "approved", items: [
+      { product: "Embryo Culture Medium G-1 PLUS", lot: "LOT-8156", qty: 4, unit: "bottles" },
+    ], reason: "Replenish lab cold room 1"
+  },
+  {
+    id: "TRF-1039", created: "Today · 08:05", from: "Pharmacy A · Medellín", to: "Pharmacy A", requester: "Logistics", receiver: "—", status: "pending", items: [
+      { product: "Gonal-F 900IU", lot: "LOT-8921", qty: 4, unit: "vials" },
+    ], reason: "Inter-site rebalance — Bogotá shortage"
+  },
+  {
+    id: "TRF-1038", created: "Yesterday · 17:40", from: "Cold Storage", to: "Quarantine", requester: "system", receiver: "Pharmacy QA", status: "received", items: [
+      { product: "HSA Solution 5%", lot: "LOT-9311", qty: 10, unit: "bottles" },
+    ], reason: "INVIMA recall 2024-118 — block"
+  },
+  {
+    id: "TRF-1037", created: "Yesterday · 11:02", from: "Lab Store", to: "Cold Storage", requester: "Embryology", receiver: "—", status: "cancelled", items: [
+      { product: "ICSI Pipette Set", lot: "LOT-7740", qty: 2, unit: "sets" },
+    ], reason: "Lot expired before pickup"
+  },
 ];
 
 // =================================================================

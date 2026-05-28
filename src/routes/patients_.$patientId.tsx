@@ -1778,7 +1778,7 @@ function PrescriptionDetailPanel({
                         className={cn(
                           "mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[12.5px] text-foreground shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15",
                           !editing &&
-                            "bg-secondary/40 text-muted-foreground cursor-not-allowed"
+                          "bg-secondary/40 text-muted-foreground cursor-not-allowed"
                         )}
                       />
                     </div>
@@ -1834,78 +1834,132 @@ function PrescriptionPanel({
   useEffect(() => {
     loadData();
   }, [editingPrescription?.id]);
-
   async function loadData() {
     setLoading(true);
 
     const [productsRes, lotsRes, doctorsRes] = await Promise.all([
-      supabase.from("products").select("*").eq("active", true).order("name"),
+      supabase
+        .from("products")
+        .select("*")
+        .eq("active", true)
+        .order("name"),
 
       supabase
         .from("inventory_lots")
         .select(`
-          *,
-          products (
-            id,
-            name,
-            generic_name,
-            category,
-            presentation,
-            unit_of_measure,
-            storage_condition,
-            temperature_min,
-            temperature_max,
-            invima_registration,
-            strength_value,
-            active
-          ),
-          locations (
-            id,
-            name
-          )
-        `)
+        *,
+        products (
+          id,
+          name,
+          generic_name,
+          category,
+          presentation,
+          unit_of_measure,
+          storage_condition,
+          temperature_min,
+          temperature_max,
+          invima_registration,
+          strength_value,
+          active
+        ),
+        locations (
+          id,
+          name
+        )
+      `)
         .eq("clinic_id", CLINIC_ID)
-        .gt("quantity_available", 0),
+        .gt("quantity_available", 0)
+        .order("expiration_date", { ascending: true }),
 
       supabase
         .from("doctors")
         .select(`
-          id,
-          first_name,
-          last_name,
-          full_name,
-          document_type,
-          document_number,
-          medical_license,
-          specialty,
-          subspecialty,
-          email,
-          phone,
-          mobile_phone,
-          address,
-          city,
-          country,
-          clinic_id,
-          department,
-          position,
-          is_active,
-          created_at,
-          updated_at
-        `)
+        id,
+        first_name,
+        last_name,
+        full_name,
+        document_type,
+        document_number,
+        medical_license,
+        specialty,
+        subspecialty,
+        email,
+        phone,
+        mobile_phone,
+        address,
+        city,
+        country,
+        clinic_id,
+        department,
+        position,
+        is_active,
+        created_at,
+        updated_at
+      `)
         .order("full_name", { ascending: true }),
     ]);
 
     console.log("PRODUCTS", productsRes.data);
     console.log("PRODUCTS ERROR", productsRes.error);
 
-    console.log("LOTS", lotsRes.data);
+    console.log("LOTS RAW", lotsRes.data);
     console.log("LOTS ERROR", lotsRes.error);
 
     console.log("DOCTORS", doctorsRes.data);
     console.log("DOCTORS ERROR", doctorsRes.error);
 
+    if (productsRes.error) {
+      console.error("PRODUCTS LOAD ERROR", productsRes.error);
+    }
+
+    if (lotsRes.error) {
+      console.error("LOTS LOAD ERROR", lotsRes.error);
+    }
+
+    if (doctorsRes.error) {
+      console.error("DOCTORS LOAD ERROR", doctorsRes.error);
+    }
+
     const productsData = (productsRes.data ?? []) as Product[];
-    const lotsData = (lotsRes.data ?? []) as InventoryLot[];
+
+    const rawLotsData = (lotsRes.data ?? []) as InventoryLot[];
+
+    const lotsData = rawLotsData.filter((lot) => {
+      const status = String(lot.status ?? "").trim().toLowerCase();
+
+      const blockedStatuses = [
+        "expired",
+        "blocked",
+        "quarantined",
+        "destroyed",
+        "consumed",
+        "cancelled",
+        "canceled",
+      ];
+
+      return (
+        Number(lot.quantity_available ?? 0) > 0 &&
+        !blockedStatuses.includes(status)
+      );
+    });
+
+    console.log(
+      "PROGESTERONE PRODUCTS",
+      productsData.filter((product) =>
+        String(product.name ?? "")
+          .toLowerCase()
+          .includes("progester")
+      )
+    );
+
+    console.log(
+      "PROGESTERONE LOTS",
+      lotsData.filter((lot: any) =>
+        String(lot.products?.name ?? "")
+          .toLowerCase()
+          .includes("progester")
+      )
+    );
 
     const doctorsData = ((doctorsRes.data ?? []) as Doctor[]).filter(
       (doctor) =>
@@ -1922,15 +1976,23 @@ function PrescriptionPanel({
     setDoctors(doctorsData);
 
     if (editingPrescription) {
-      setSelectedDoctorId(editingPrescription.physician_id ?? doctorsData[0]?.id ?? "");
-      setPrescriptionType(editingPrescription.prescription_type ?? "MEDICATION");
+      setSelectedDoctorId(
+        editingPrescription.physician_id ?? doctorsData[0]?.id ?? ""
+      );
+
+      setPrescriptionType(
+        editingPrescription.prescription_type ?? "MEDICATION"
+      );
+
       setClinicalReason(
         editingPrescription.clinical_reason ??
-          "Medication plan for current treatment cycle"
+        "Medication plan for current treatment cycle"
       );
 
       const drafts = (editingPrescription.prescription_items ?? []).map((item) => {
-        const product = productsData.find((product) => product.id === item.medication_id);
+        const product = productsData.find(
+          (product) => product.id === item.medication_id
+        );
 
         return {
           local_id: item.id,
@@ -2073,14 +2135,45 @@ function PrescriptionPanel({
     return doctor.full_name?.trim() || fallbackName || "Doctor sin nombre";
   }
 
+  function isUsableInventoryLot(lot: InventoryLot) {
+    const status = String(lot.status ?? "").trim().toLowerCase();
+
+    const blockedStatuses = [
+      "expired",
+      "blocked",
+      "quarantined",
+      "destroyed",
+      "consumed",
+      "cancelled",
+      "canceled",
+    ];
+
+    return (
+      Number(lot.quantity_available ?? 0) > 0 &&
+      !blockedStatuses.includes(status)
+    );
+  }
   function getAvailableLotsByProductId(productId: string, sourceLots = lots) {
     return sourceLots
-      .filter(
-        (lot) =>
+      .filter((lot) => {
+        const status = String(lot.status ?? "").trim().toLowerCase();
+
+        const blockedStatuses = [
+          "expired",
+          "blocked",
+          "quarantined",
+          "destroyed",
+          "consumed",
+          "cancelled",
+          "canceled",
+        ];
+
+        return (
           lot.product_id === productId &&
           Number(lot.quantity_available ?? 0) > 0 &&
-          (!lot.status || lot.status === "AVAILABLE" || lot.status === "ACTIVE")
-      )
+          !blockedStatuses.includes(status)
+        );
+      })
       .sort((a, b) => {
         const dateA = a.expiration_date
           ? new Date(a.expiration_date).getTime()
@@ -2095,12 +2188,13 @@ function PrescriptionPanel({
   }
 
   function getAvailableInventoryByProductId(productId: string) {
-    return getAvailableLotsByProductId(productId).reduce(
+    const availableLots = getAvailableLotsByProductId(productId);
+
+    return availableLots.reduce(
       (total, lot) => total + Number(lot.quantity_available ?? 0),
-      0
+      0,
     );
   }
-
   function calculateMedication(item: MedicationDraft) {
     const product = getProductById(item.product_id);
 
@@ -2329,10 +2423,10 @@ function PrescriptionPanel({
         currentLots.map((lot) =>
           lot.id === reservation.lot.id
             ? {
-                ...lot,
-                quantity_available: newAvailable,
-                quantity_reserved: newReserved,
-              }
+              ...lot,
+              quantity_available: newAvailable,
+              quantity_reserved: newReserved,
+            }
             : lot
         )
       );
@@ -2891,9 +2985,8 @@ function PrescriptionPanel({
 
                             <Info
                               label="Strength"
-                              value={`${product.strength_value ?? "-"} ${
-                                product.unit_of_measure ?? ""
-                              }`}
+                              value={`${product.strength_value ?? "-"} ${product.unit_of_measure ?? ""
+                                }`}
                             />
 
                             <Info
@@ -2908,9 +3001,8 @@ function PrescriptionPanel({
 
                             <Info
                               label="Available stock"
-                              value={`${calc.availableUnits} ${
-                                product.presentation ?? "units"
-                              }`}
+                              value={`${calc.availableUnits} ${product.presentation ?? "units"
+                                }`}
                             />
                           </div>
                         </div>
@@ -3229,7 +3321,7 @@ function ControlledSelect({
           className={cn(
             "w-full h-9 appearance-none rounded-md border border-border bg-card px-3 pr-9 text-[12.5px] text-foreground shadow-sm outline-none transition-colors hover:bg-secondary/60 focus:border-primary focus:ring-2 focus:ring-primary/15",
             disabled &&
-              "cursor-not-allowed bg-secondary/60 text-muted-foreground hover:bg-secondary/60"
+            "cursor-not-allowed bg-secondary/60 text-muted-foreground hover:bg-secondary/60"
           )}
         >
           {options.length === 0 && (
