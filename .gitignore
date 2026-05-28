@@ -16,6 +16,9 @@ dist-ssr
 .nitro
 *.local
 
+.output
+node_modules/.nitro
+
 # Environment variables
 .env
 .env.local
