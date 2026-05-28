@@ -7,15 +7,51 @@ export const Route = createFileRoute("/procedures")({
 });
 
 const today = [
-  { time: "09:00", procedure: "OPU — Sarah J.", room: "Room 4", status: "in-progress" as const, type: "OPU" },
-  { time: "10:15", procedure: "ET — Maria L.", room: "Room 2", status: "scheduled" as const, type: "ET" },
-  { time: "11:30", procedure: "OPU — Sofia P.", room: "Room 4", status: "scheduled" as const, type: "OPU" },
-  { time: "14:00", procedure: "FET — Amanda C.", room: "Room 2", status: "scheduled" as const, type: "FET" },
+  {
+    time: "09:00",
+    procedure: "OPU — Sarah J.",
+    room: "Room 4",
+    status: "in-progress" as const,
+    type: "OPU",
+  },
+  {
+    time: "10:15",
+    procedure: "ET — Maria L.",
+    room: "Room 2",
+    status: "scheduled" as const,
+    type: "ET",
+  },
+  {
+    time: "11:30",
+    procedure: "OPU — Sofia P.",
+    room: "Room 4",
+    status: "scheduled" as const,
+    type: "OPU",
+  },
+  {
+    time: "14:00",
+    procedure: "FET — Amanda C.",
+    room: "Room 2",
+    status: "scheduled" as const,
+    type: "FET",
+  },
 ];
 
 const tomorrow = [
-  { time: "08:30", procedure: "OPU — Jennifer C.", room: "Room 4", status: "scheduled" as const, type: "OPU" },
-  { time: "11:00", procedure: "ET — Elena R.", room: "Room 2", status: "scheduled" as const, type: "ET" },
+  {
+    time: "08:30",
+    procedure: "OPU — Jennifer C.",
+    room: "Room 4",
+    status: "scheduled" as const,
+    type: "OPU",
+  },
+  {
+    time: "11:00",
+    procedure: "ET — Elena R.",
+    room: "Room 2",
+    status: "scheduled" as const,
+    type: "ET",
+  },
 ];
 
 function ProceduresPage() {
@@ -24,7 +60,9 @@ function ProceduresPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Procedures</h1>
-          <p className="text-sm text-muted-foreground mt-1">Operating room schedule and procedure coordination</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Operating room schedule and procedure coordination
+          </p>
         </div>
       </div>
 
@@ -36,7 +74,15 @@ function ProceduresPage() {
   );
 }
 
-function ProcedureCard({ title, date, procedures }: { title: string; date: string; procedures: typeof today }) {
+function ProcedureCard({
+  title,
+  date,
+  procedures,
+}: {
+  title: string;
+  date: string;
+  procedures: typeof today;
+}) {
   return (
     <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -48,7 +94,10 @@ function ProcedureCard({ title, date, procedures }: { title: string; date: strin
       </div>
       <div className="space-y-3">
         {procedures.map((proc) => (
-          <div key={proc.procedure} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+          <div
+            key={proc.procedure}
+            className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+          >
             <div className="flex items-center gap-3">
               <span className="text-[11px] font-mono text-muted-foreground w-10">{proc.time}</span>
               <div>
@@ -60,7 +109,7 @@ function ProcedureCard({ title, date, procedures }: { title: string; date: strin
               className={cn(
                 "text-[10px] px-2 py-0.5 rounded font-bold",
                 proc.status === "in-progress" && "bg-clinical/10 text-clinical",
-                proc.status === "scheduled" && "bg-muted text-muted-foreground"
+                proc.status === "scheduled" && "bg-muted text-muted-foreground",
               )}
             >
               {proc.status === "in-progress" ? "In Progress" : "Scheduled"}

@@ -248,15 +248,17 @@ function PatientDetailPage() {
   const { patientId } = Route.useParams();
 
   const [rxOpen, setRxOpen] = useState(false);
-  const [editingPrescription, setEditingPrescription] =
-    useState<PrescriptionHistoryItem | null>(null);
+  const [editingPrescription, setEditingPrescription] = useState<PrescriptionHistoryItem | null>(
+    null,
+  );
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [clinicPerson, setClinicPerson] = useState<ClinicPerson | null>(null);
   const [prescriptions, setPrescriptions] = useState<PrescriptionHistoryItem[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [selectedPrescription, setSelectedPrescription] =
-    useState<PrescriptionHistoryItem | null>(null);
+  const [selectedPrescription, setSelectedPrescription] = useState<PrescriptionHistoryItem | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -308,7 +310,8 @@ function PatientDetailPage() {
   async function loadDoctors() {
     const { data, error } = await supabase
       .from("doctors")
-      .select(`
+      .select(
+        `
         id,
         first_name,
         last_name,
@@ -330,7 +333,8 @@ function PatientDetailPage() {
         is_active,
         created_at,
         updated_at
-      `)
+      `,
+      )
       .order("full_name", { ascending: true });
 
     console.log("PAGE DOCTORS", data);
@@ -344,11 +348,7 @@ function PatientDetailPage() {
     const doctorsData = (data as Doctor[]).filter(
       (doctor) =>
         doctor.id &&
-        (
-          doctor.full_name?.trim() ||
-          doctor.first_name?.trim() ||
-          doctor.last_name?.trim()
-        )
+        (doctor.full_name?.trim() || doctor.first_name?.trim() || doctor.last_name?.trim()),
     );
 
     setDoctors(doctorsData);
@@ -357,7 +357,8 @@ function PatientDetailPage() {
   async function loadPrescriptionHistory(clinicPersonId: string) {
     const { data, error } = await supabase
       .from("prescriptions")
-      .select(`
+      .select(
+        `
         id,
         physician_id,
         prescription_type,
@@ -377,7 +378,8 @@ function PatientDetailPage() {
           inventory_status,
           instructions
         )
-      `)
+      `,
+      )
       .eq("clinic_patient_id", clinicPersonId)
       .order("created_at", { ascending: false });
 
@@ -394,16 +396,12 @@ function PatientDetailPage() {
         data
           .flatMap((prescription: any) => prescription.prescription_items ?? [])
           .map((item: any) => item.medication_id)
-          .filter(Boolean)
-      )
+          .filter(Boolean),
+      ),
     );
 
     const physicianIds = Array.from(
-      new Set(
-        data
-          .map((prescription: any) => prescription.physician_id)
-          .filter(Boolean)
-      )
+      new Set(data.map((prescription: any) => prescription.physician_id).filter(Boolean)),
     );
 
     let productMap: Record<string, Product> = {};
@@ -420,7 +418,7 @@ function PatientDetailPage() {
 
       if (!productsError && productsData) {
         productMap = Object.fromEntries(
-          (productsData as Product[]).map((product) => [product.id, product])
+          (productsData as Product[]).map((product) => [product.id, product]),
         );
       }
     }
@@ -436,15 +434,13 @@ function PatientDetailPage() {
 
       if (!doctorsError && doctorsData) {
         doctorMap = Object.fromEntries(
-          (doctorsData as Doctor[]).map((doctor) => [doctor.id, doctor])
+          (doctorsData as Doctor[]).map((doctor) => [doctor.id, doctor]),
         );
       }
     }
 
     const enriched = data.map((prescription: any) => {
-      const doctor = prescription.physician_id
-        ? doctorMap[prescription.physician_id]
-        : null;
+      const doctor = prescription.physician_id ? doctorMap[prescription.physician_id] : null;
 
       const physicianName =
         doctor?.full_name ||
@@ -457,15 +453,13 @@ function PatientDetailPage() {
         physician_license: doctor?.medical_license ?? null,
         physician_specialty: doctor?.specialty ?? null,
         physician_document_number: doctor?.document_number ?? null,
-        prescription_items: (prescription.prescription_items ?? []).map(
-          (item: any) => ({
-            ...item,
-            medication_name:
-              item.medication_id && productMap[item.medication_id]
-                ? productMap[item.medication_id].name
-                : null,
-          })
-        ),
+        prescription_items: (prescription.prescription_items ?? []).map((item: any) => ({
+          ...item,
+          medication_name:
+            item.medication_id && productMap[item.medication_id]
+              ? productMap[item.medication_id].name
+              : null,
+        })),
       };
     });
 
@@ -543,8 +537,8 @@ function PatientDetailPage() {
               quantity_unit: item.quantity_unit,
               instructions: item.instructions,
             })
-            .eq("id", item.id)
-        )
+            .eq("id", item.id),
+        ),
       );
 
       const itemError = itemUpdates.find((result) => result.error)?.error;
@@ -553,9 +547,7 @@ function PatientDetailPage() {
       console.log("UPDATE PRESCRIPTION ITEMS ERROR", itemError);
 
       if (itemError) {
-        alert(
-          "Prescription header was updated, but medication details could not be updated"
-        );
+        alert("Prescription header was updated, but medication details could not be updated");
         return;
       }
     }
@@ -565,27 +557,23 @@ function PatientDetailPage() {
     setSelectedPrescription((current) => {
       if (!current) return current;
 
-      const updatedPrescriptionItems = (current.prescription_items ?? []).map(
-        (currentItem) => {
-          const updatedItem = prescriptionItems?.find(
-            (item) => item.id === currentItem.id
-          );
+      const updatedPrescriptionItems = (current.prescription_items ?? []).map((currentItem) => {
+        const updatedItem = prescriptionItems?.find((item) => item.id === currentItem.id);
 
-          if (!updatedItem) return currentItem;
+        if (!updatedItem) return currentItem;
 
-          return {
-            ...currentItem,
-            dose: updatedItem.dose,
-            route: updatedItem.route,
-            frequency: updatedItem.frequency,
-            duration_days: updatedItem.duration_days,
-            start_datetime: updatedItem.start_datetime,
-            quantity_required: updatedItem.quantity_required,
-            quantity_unit: updatedItem.quantity_unit,
-            instructions: updatedItem.instructions,
-          };
-        }
-      );
+        return {
+          ...currentItem,
+          dose: updatedItem.dose,
+          route: updatedItem.route,
+          frequency: updatedItem.frequency,
+          duration_days: updatedItem.duration_days,
+          start_datetime: updatedItem.start_datetime,
+          quantity_required: updatedItem.quantity_required,
+          quantity_unit: updatedItem.quantity_unit,
+          instructions: updatedItem.instructions,
+        };
+      });
 
       return {
         ...current,
@@ -671,9 +659,7 @@ function PatientDetailPage() {
 
       doc.setFont("helvetica", "normal");
       const cleanValue =
-        value !== null && value !== undefined && String(value).trim()
-          ? String(value)
-          : "-";
+        value !== null && value !== undefined && String(value).trim() ? String(value) : "-";
 
       const split = doc.splitTextToSize(cleanValue, usableWidth - 42);
       doc.text(split, marginLeft + 38, y);
@@ -686,8 +672,7 @@ function PatientDetailPage() {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
 
-      const cleanText =
-        text !== null && text !== undefined && text.trim() ? text : "-";
+      const cleanText = text !== null && text !== undefined && text.trim() ? text : "-";
 
       const split = doc.splitTextToSize(cleanText, usableWidth);
       doc.text(split, marginLeft, y);
@@ -741,24 +726,13 @@ function PatientDetailPage() {
     field("Created at", formatShortDate(prescription.created_at));
 
     section("Physician");
-    field(
-      "Name",
-      prescription.physician_name ?? getDoctorFullName(doctor)
-    );
+    field("Name", prescription.physician_name ?? getDoctorFullName(doctor));
     field(
       "Document number",
-      prescription.physician_document_number ??
-      doctor?.document_number ??
-      "-"
+      prescription.physician_document_number ?? doctor?.document_number ?? "-",
     );
-    field(
-      "Specialty",
-      prescription.physician_specialty ?? doctor?.specialty ?? "-"
-    );
-    field(
-      "Medical license",
-      prescription.physician_license ?? doctor?.medical_license ?? "-"
-    );
+    field("Specialty", prescription.physician_specialty ?? doctor?.specialty ?? "-");
+    field("Medical license", prescription.physician_license ?? doctor?.medical_license ?? "-");
     field("Email", doctor?.email ?? "-");
 
     section("Clinical reason / General instructions");
@@ -771,16 +745,13 @@ function PatientDetailPage() {
     tableRow(
       ["#", "Medication", "Dose", "Route", "Frequency", "Days", "Start", "Qty"],
       columnWidths,
-      true
+      true,
     );
 
     const medications = prescription.prescription_items ?? [];
 
     if (medications.length === 0) {
-      tableRow(
-        ["-", "No medications registered", "-", "-", "-", "-", "-", "-"],
-        columnWidths
-      );
+      tableRow(["-", "No medications registered", "-", "-", "-", "-", "-", "-"], columnWidths);
     } else {
       medications.forEach((item, index) => {
         tableRow(
@@ -794,12 +765,11 @@ function PatientDetailPage() {
               ? String(item.duration_days)
               : "-",
             item.start_datetime ? formatShortDate(item.start_datetime) : "-",
-            item.quantity_required !== null &&
-              item.quantity_required !== undefined
+            item.quantity_required !== null && item.quantity_required !== undefined
               ? String(item.quantity_required)
               : "-",
           ],
-          columnWidths
+          columnWidths,
         );
       });
     }
@@ -813,11 +783,7 @@ function PatientDetailPage() {
         checkPageSpace(12);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9);
-        doc.text(
-          `${index + 1}. ${item.medication_name ?? "Medication"}`,
-          marginLeft,
-          y
-        );
+        doc.text(`${index + 1}. ${item.medication_name ?? "Medication"}`, marginLeft, y);
         y += 5;
 
         doc.setFont("helvetica", "normal");
@@ -852,9 +818,7 @@ function PatientDetailPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="text-[13px] text-muted-foreground">
-          Loading patient...
-        </div>
+        <div className="text-[13px] text-muted-foreground">Loading patient...</div>
       </div>
     );
   }
@@ -862,9 +826,7 @@ function PatientDetailPage() {
   if (!patient) {
     return (
       <div className="p-6">
-        <div className="text-[13px] text-muted-foreground">
-          Patient not found
-        </div>
+        <div className="text-[13px] text-muted-foreground">Patient not found</div>
       </div>
     );
   }
@@ -888,9 +850,7 @@ function PatientDetailPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold tracking-tight">
-                  {fullName}
-                </h1>
+                <h1 className="text-xl font-semibold tracking-tight">{fullName}</h1>
 
                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent text-primary">
                   Trigger phase
@@ -915,14 +875,10 @@ function PatientDetailPage() {
                 {patient.phone && <span>📞 {patient.phone}</span>}
                 {patient.email && <span>✉️ {patient.email}</span>}
 
-                {patient.biological_sex && (
-                  <span>Biological sex: {patient.biological_sex}</span>
-                )}
+                {patient.biological_sex && <span>Biological sex: {patient.biological_sex}</span>}
 
                 {clinicPerson?.internal_patient_code && (
-                  <span>
-                    Internal code: {clinicPerson.internal_patient_code}
-                  </span>
+                  <span>Internal code: {clinicPerson.internal_patient_code}</span>
                 )}
               </div>
             </div>
@@ -946,7 +902,7 @@ function PatientDetailPage() {
                 "h-9 px-3 rounded-md text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors",
                 clinicPerson
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-muted text-muted-foreground cursor-not-allowed",
               )}
             >
               <Plus className="size-3.5" />
@@ -961,9 +917,9 @@ function PatientDetailPage() {
           </div>
 
           <p className="text-[12px] text-foreground/80 leading-relaxed">
-            <span className="font-semibold text-primary">AI summary ·</span>{" "}
-            Patient currently in stimulation workflow. Review hormone response,
-            medication adherence, and embryo planning before next procedure.
+            <span className="font-semibold text-primary">AI summary ·</span> Patient currently in
+            stimulation workflow. Review hormone response, medication adherence, and embryo planning
+            before next procedure.
           </p>
         </div>
 
@@ -979,34 +935,22 @@ function PatientDetailPage() {
 
           <div className="relative grid grid-cols-7 gap-1">
             {stages.map((stage) => (
-              <div
-                key={stage.label}
-                className="flex flex-col items-center text-center"
-              >
+              <div key={stage.label} className="flex flex-col items-center text-center">
                 <div
                   className={cn(
                     "size-9 rounded-full flex items-center justify-center text-[11px] font-semibold ring-4 ring-card",
-                    stage.status === "done" &&
-                    "bg-primary text-primary-foreground",
-                    stage.status === "active" &&
-                    "bg-card border-2 border-primary text-primary",
-                    stage.status === "next" &&
-                    "bg-accent text-primary border border-accent",
+                    stage.status === "done" && "bg-primary text-primary-foreground",
+                    stage.status === "active" && "bg-card border-2 border-primary text-primary",
+                    stage.status === "next" && "bg-accent text-primary border border-accent",
                     stage.status === "pending" &&
-                    "bg-card border border-border text-muted-foreground"
+                      "bg-card border border-border text-muted-foreground",
                   )}
                 >
-                  {stage.status === "done" ? (
-                    <CheckCircle2 className="size-4" />
-                  ) : (
-                    stage.short
-                  )}
+                  {stage.status === "done" ? <CheckCircle2 className="size-4" /> : stage.short}
                 </div>
 
                 <p className="mt-2 text-[11px] font-medium">{stage.label}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {stage.when}
-                </p>
+                <p className="text-[10px] text-muted-foreground">{stage.when}</p>
               </div>
             ))}
           </div>
@@ -1031,7 +975,7 @@ function PatientDetailPage() {
                 "h-9 px-3 rounded-md text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors",
                 clinicPerson
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-muted text-muted-foreground cursor-not-allowed",
               )}
             >
               <Plus className="size-3.5" />
@@ -1101,23 +1045,17 @@ function PatientDetailPage() {
                     </div>
 
                     <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {(prescription.prescription_items ?? [])
-                        .slice(0, 4)
-                        .map((item) => (
-                          <div
-                            key={item.id}
-                            className="rounded-md bg-card border border-border p-2"
-                          >
-                            <p className="text-[11px] font-medium">
-                              {item.medication_name ?? "Medication"}
-                            </p>
+                      {(prescription.prescription_items ?? []).slice(0, 4).map((item) => (
+                        <div key={item.id} className="rounded-md bg-card border border-border p-2">
+                          <p className="text-[11px] font-medium">
+                            {item.medication_name ?? "Medication"}
+                          </p>
 
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              {item.dose ?? "-"} · {item.route ?? "-"} ·{" "}
-                              {item.frequency ?? "-"}
-                            </p>
-                          </div>
-                        ))}
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {item.dose ?? "-"} · {item.route ?? "-"} · {item.frequency ?? "-"}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </button>
                 );
@@ -1158,13 +1096,9 @@ function PatientDetailPage() {
                     <div className="flex-1">
                       <p className="text-[11px] font-medium">{event.title}</p>
 
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {event.time}
-                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{event.time}</p>
 
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {event.meta}
-                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{event.meta}</p>
                     </div>
                   </li>
                 ))}
@@ -1252,16 +1186,12 @@ function PrescriptionDetailPanel({
 
   const [physicianId, setPhysicianId] = useState(prescription.physician_id ?? "");
   const [prescriptionType, setPrescriptionType] = useState(
-    prescription.prescription_type ?? "MEDICATION"
+    prescription.prescription_type ?? "MEDICATION",
   );
   const [status, setStatus] = useState(prescription.status ?? "ACTIVE");
-  const [clinicalReason, setClinicalReason] = useState(
-    prescription.clinical_reason ?? ""
-  );
+  const [clinicalReason, setClinicalReason] = useState(prescription.clinical_reason ?? "");
 
-  const [medicationDrafts, setMedicationDrafts] = useState(
-    createMedicationDrafts(prescription)
-  );
+  const [medicationDrafts, setMedicationDrafts] = useState(createMedicationDrafts(prescription));
 
   useEffect(() => {
     setPhysicianId(prescription.physician_id ?? "");
@@ -1305,12 +1235,10 @@ function PrescriptionDetailPanel({
       quantity_required: string;
       quantity_unit: string;
       instructions: string;
-    }>
+    }>,
   ) {
     setMedicationDrafts((current) =>
-      current.map((item) =>
-        item.id === itemId ? { ...item, ...patch } : item
-      )
+      current.map((item) => (item.id === itemId ? { ...item, ...patch } : item)),
     );
   }
 
@@ -1341,7 +1269,7 @@ function PrescriptionDetailPanel({
 
     const physicianName = selectedDoctor
       ? getDoctorFullName(selectedDoctor)
-      : prescription.physician_name ?? null;
+      : (prescription.physician_name ?? null);
 
     const updatedItems = (prescription.prescription_items ?? []).map((item) => {
       const draft = medicationDrafts.find((draftItem) => draftItem.id === item.id);
@@ -1355,9 +1283,7 @@ function PrescriptionDetailPanel({
         frequency: draft.frequency || null,
         duration_days: draft.duration_days ? Number(draft.duration_days) : null,
         start_datetime: fromDatetimeLocalValue(draft.start_datetime),
-        quantity_required: draft.quantity_required
-          ? Number(draft.quantity_required)
-          : null,
+        quantity_required: draft.quantity_required ? Number(draft.quantity_required) : null,
         quantity_unit: draft.quantity_unit || null,
         instructions: draft.instructions || null,
       };
@@ -1367,14 +1293,10 @@ function PrescriptionDetailPanel({
       ...prescription,
       physician_id: physicianId || null,
       physician_name: physicianName,
-      physician_license:
-        selectedDoctor?.medical_license ?? prescription.physician_license ?? null,
-      physician_specialty:
-        selectedDoctor?.specialty ?? prescription.physician_specialty ?? null,
+      physician_license: selectedDoctor?.medical_license ?? prescription.physician_license ?? null,
+      physician_specialty: selectedDoctor?.specialty ?? prescription.physician_specialty ?? null,
       physician_document_number:
-        selectedDoctor?.document_number ??
-        prescription.physician_document_number ??
-        null,
+        selectedDoctor?.document_number ?? prescription.physician_document_number ?? null,
       prescription_type: prescriptionType,
       status,
       clinical_reason: clinicalReason,
@@ -1393,9 +1315,7 @@ function PrescriptionDetailPanel({
         frequency: item.frequency || null,
         duration_days: item.duration_days ? Number(item.duration_days) : null,
         start_datetime: fromDatetimeLocalValue(item.start_datetime),
-        quantity_required: item.quantity_required
-          ? Number(item.quantity_required)
-          : null,
+        quantity_required: item.quantity_required ? Number(item.quantity_required) : null,
         quantity_unit: item.quantity_unit || null,
         instructions: item.instructions || null,
       }));
@@ -1441,9 +1361,7 @@ function PrescriptionDetailPanel({
               {prescription.prescription_type ?? "Prescription"}
             </h2>
 
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Patient: {patientName}
-            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">Patient: {patientName}</p>
 
             <p className="text-[10.5px] text-muted-foreground mt-1">
               Prescription ID: {prescription.id}
@@ -1499,7 +1417,7 @@ function PrescriptionDetailPanel({
                     "h-9 px-3 rounded-md text-[12px] font-medium inline-flex items-center gap-1.5 transition-colors",
                     saving
                       ? "bg-muted text-muted-foreground cursor-not-allowed"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90",
                   )}
                 >
                   <Save className="size-3.5" />
@@ -1534,9 +1452,7 @@ function PrescriptionDetailPanel({
                 Medications
               </p>
 
-              <p className="text-[12px] font-medium mt-1">
-                {medicationDrafts.length}
-              </p>
+              <p className="text-[12px] font-medium mt-1">{medicationDrafts.length}</p>
             </div>
 
             <div className="rounded-xl border border-border bg-secondary/20 p-4">
@@ -1544,20 +1460,17 @@ function PrescriptionDetailPanel({
                 Current status
               </p>
 
-              <p className="text-[12px] font-medium mt-1">
-                {status || "-"}
-              </p>
+              <p className="text-[12px] font-medium mt-1">{status || "-"}</p>
             </div>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 space-y-4">
             <div>
-              <h3 className="text-[14px] font-semibold">
-                Prescription information
-              </h3>
+              <h3 className="text-[14px] font-semibold">Prescription information</h3>
 
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Click Quick edit to modify header fields, or Edit full prescription to rebuild the prescription.
+                Click Quick edit to modify header fields, or Edit full prescription to rebuild the
+                prescription.
               </p>
             </div>
 
@@ -1597,35 +1510,25 @@ function PrescriptionDetailPanel({
                   value={
                     selectedDoctor
                       ? getDoctorFullName(selectedDoctor)
-                      : prescription.physician_name ?? "-"
+                      : (prescription.physician_name ?? "-")
                   }
                 />
 
                 <Info
                   label="Document"
                   value={
-                    selectedDoctor?.document_number ??
-                    prescription.physician_document_number ??
-                    "-"
+                    selectedDoctor?.document_number ?? prescription.physician_document_number ?? "-"
                   }
                 />
 
                 <Info
                   label="Specialty"
-                  value={
-                    selectedDoctor?.specialty ??
-                    prescription.physician_specialty ??
-                    "-"
-                  }
+                  value={selectedDoctor?.specialty ?? prescription.physician_specialty ?? "-"}
                 />
 
                 <Info
                   label="License"
-                  value={
-                    selectedDoctor?.medical_license ??
-                    prescription.physician_license ??
-                    "-"
-                  }
+                  value={selectedDoctor?.medical_license ?? prescription.physician_license ?? "-"}
                 />
               </div>
             </div>
@@ -1642,7 +1545,7 @@ function PrescriptionDetailPanel({
                 rows={4}
                 className={cn(
                   "mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15",
-                  !editing && "bg-secondary/40 text-muted-foreground cursor-not-allowed"
+                  !editing && "bg-secondary/40 text-muted-foreground cursor-not-allowed",
                 )}
               />
             </div>
@@ -1650,9 +1553,7 @@ function PrescriptionDetailPanel({
 
           <div className="rounded-xl border border-border bg-card p-4">
             <div>
-              <h3 className="text-[14px] font-semibold">
-                Medication details
-              </h3>
+              <h3 className="text-[14px] font-semibold">Medication details</h3>
 
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 Use Edit full prescription if you need to add, remove, or replace medications.
@@ -1676,9 +1577,7 @@ function PrescriptionDetailPanel({
                           {index + 1}. {item.medication_name}
                         </p>
 
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          Item ID: {item.id}
-                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Item ID: {item.id}</p>
                       </div>
                     </div>
 
@@ -1687,18 +1586,14 @@ function PrescriptionDetailPanel({
                         label="Dose"
                         value={item.dose}
                         disabled={!editing}
-                        onChange={(value) =>
-                          updateMedicationDraft(item.id, { dose: value })
-                        }
+                        onChange={(value) => updateMedicationDraft(item.id, { dose: value })}
                       />
 
                       <ControlledSelect
                         label="Route"
                         value={item.route}
                         disabled={!editing}
-                        onChange={(value) =>
-                          updateMedicationDraft(item.id, { route: value })
-                        }
+                        onChange={(value) => updateMedicationDraft(item.id, { route: value })}
                         options={ROUTE_OPTIONS}
                       />
 
@@ -1706,9 +1601,7 @@ function PrescriptionDetailPanel({
                         label="Frequency"
                         value={item.frequency}
                         disabled={!editing}
-                        onChange={(value) =>
-                          updateMedicationDraft(item.id, { frequency: value })
-                        }
+                        onChange={(value) => updateMedicationDraft(item.id, { frequency: value })}
                       />
 
                       <ControlledInput
@@ -1777,8 +1670,7 @@ function PrescriptionDetailPanel({
                         rows={3}
                         className={cn(
                           "mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-[12.5px] text-foreground shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15",
-                          !editing &&
-                          "bg-secondary/40 text-muted-foreground cursor-not-allowed"
+                          !editing && "bg-secondary/40 text-muted-foreground cursor-not-allowed",
                         )}
                       />
                     </div>
@@ -1826,7 +1718,7 @@ function PrescriptionPanel({
   const [linkedProtocol, setLinkedProtocol] = useState("Antagonist IVF");
 
   const [clinicalReason, setClinicalReason] = useState(
-    "Medication plan for current treatment cycle"
+    "Medication plan for current treatment cycle",
   );
 
   const [medications, setMedications] = useState<MedicationDraft[]>([]);
@@ -1838,15 +1730,12 @@ function PrescriptionPanel({
     setLoading(true);
 
     const [productsRes, lotsRes, doctorsRes] = await Promise.all([
-      supabase
-        .from("products")
-        .select("*")
-        .eq("active", true)
-        .order("name"),
+      supabase.from("products").select("*").eq("active", true).order("name"),
 
       supabase
         .from("inventory_lots")
-        .select(`
+        .select(
+          `
         *,
         products (
           id,
@@ -1866,14 +1755,16 @@ function PrescriptionPanel({
           id,
           name
         )
-      `)
+      `,
+        )
         .eq("clinic_id", CLINIC_ID)
         .gt("quantity_available", 0)
         .order("expiration_date", { ascending: true }),
 
       supabase
         .from("doctors")
-        .select(`
+        .select(
+          `
         id,
         first_name,
         last_name,
@@ -1895,7 +1786,8 @@ function PrescriptionPanel({
         is_active,
         created_at,
         updated_at
-      `)
+      `,
+        )
         .order("full_name", { ascending: true }),
     ]);
 
@@ -1925,7 +1817,9 @@ function PrescriptionPanel({
     const rawLotsData = (lotsRes.data ?? []) as InventoryLot[];
 
     const lotsData = rawLotsData.filter((lot) => {
-      const status = String(lot.status ?? "").trim().toLowerCase();
+      const status = String(lot.status ?? "")
+        .trim()
+        .toLowerCase();
 
       const blockedStatuses = [
         "expired",
@@ -1937,10 +1831,7 @@ function PrescriptionPanel({
         "canceled",
       ];
 
-      return (
-        Number(lot.quantity_available ?? 0) > 0 &&
-        !blockedStatuses.includes(status)
-      );
+      return Number(lot.quantity_available ?? 0) > 0 && !blockedStatuses.includes(status);
     });
 
     console.log(
@@ -1948,8 +1839,8 @@ function PrescriptionPanel({
       productsData.filter((product) =>
         String(product.name ?? "")
           .toLowerCase()
-          .includes("progester")
-      )
+          .includes("progester"),
+      ),
     );
 
     console.log(
@@ -1957,18 +1848,14 @@ function PrescriptionPanel({
       lotsData.filter((lot: any) =>
         String(lot.products?.name ?? "")
           .toLowerCase()
-          .includes("progester")
-      )
+          .includes("progester"),
+      ),
     );
 
     const doctorsData = ((doctorsRes.data ?? []) as Doctor[]).filter(
       (doctor) =>
         doctor.id &&
-        (
-          doctor.full_name?.trim() ||
-          doctor.first_name?.trim() ||
-          doctor.last_name?.trim()
-        )
+        (doctor.full_name?.trim() || doctor.first_name?.trim() || doctor.last_name?.trim()),
     );
 
     setProducts(productsData);
@@ -1976,23 +1863,16 @@ function PrescriptionPanel({
     setDoctors(doctorsData);
 
     if (editingPrescription) {
-      setSelectedDoctorId(
-        editingPrescription.physician_id ?? doctorsData[0]?.id ?? ""
-      );
+      setSelectedDoctorId(editingPrescription.physician_id ?? doctorsData[0]?.id ?? "");
 
-      setPrescriptionType(
-        editingPrescription.prescription_type ?? "MEDICATION"
-      );
+      setPrescriptionType(editingPrescription.prescription_type ?? "MEDICATION");
 
       setClinicalReason(
-        editingPrescription.clinical_reason ??
-        "Medication plan for current treatment cycle"
+        editingPrescription.clinical_reason ?? "Medication plan for current treatment cycle",
       );
 
       const drafts = (editingPrescription.prescription_items ?? []).map((item) => {
-        const product = productsData.find(
-          (product) => product.id === item.medication_id
-        );
+        const product = productsData.find((product) => product.id === item.medication_id);
 
         return {
           local_id: item.id,
@@ -2092,10 +1972,7 @@ function PrescriptionPanel({
       return;
     }
 
-    setMedications((current) => [
-      ...current,
-      createEmptyMedication(firstProduct),
-    ]);
+    setMedications((current) => [...current, createEmptyMedication(firstProduct)]);
   }
 
   function removeMedication(localId: string) {
@@ -2110,9 +1987,7 @@ function PrescriptionPanel({
 
   function updateMedication(localId: string, patch: Partial<MedicationDraft>) {
     setMedications((current) =>
-      current.map((item) =>
-        item.local_id === localId ? { ...item, ...patch } : item
-      )
+      current.map((item) => (item.local_id === localId ? { ...item, ...patch } : item)),
     );
   }
 
@@ -2136,7 +2011,9 @@ function PrescriptionPanel({
   }
 
   function isUsableInventoryLot(lot: InventoryLot) {
-    const status = String(lot.status ?? "").trim().toLowerCase();
+    const status = String(lot.status ?? "")
+      .trim()
+      .toLowerCase();
 
     const blockedStatuses = [
       "expired",
@@ -2148,15 +2025,14 @@ function PrescriptionPanel({
       "canceled",
     ];
 
-    return (
-      Number(lot.quantity_available ?? 0) > 0 &&
-      !blockedStatuses.includes(status)
-    );
+    return Number(lot.quantity_available ?? 0) > 0 && !blockedStatuses.includes(status);
   }
   function getAvailableLotsByProductId(productId: string, sourceLots = lots) {
     return sourceLots
       .filter((lot) => {
-        const status = String(lot.status ?? "").trim().toLowerCase();
+        const status = String(lot.status ?? "")
+          .trim()
+          .toLowerCase();
 
         const blockedStatuses = [
           "expired",
@@ -2190,10 +2066,7 @@ function PrescriptionPanel({
   function getAvailableInventoryByProductId(productId: string) {
     const availableLots = getAvailableLotsByProductId(productId);
 
-    return availableLots.reduce(
-      (total, lot) => total + Number(lot.quantity_available ?? 0),
-      0,
-    );
+    return availableLots.reduce((total, lot) => total + Number(lot.quantity_available ?? 0), 0);
   }
   function calculateMedication(item: MedicationDraft) {
     const product = getProductById(item.product_id);
@@ -2202,32 +2075,21 @@ function PrescriptionPanel({
     const strengthValue = Number(product?.strength_value || 0);
 
     const unitsPerDose =
-      doseValue > 0 && strengthValue > 0
-        ? Math.ceil(doseValue / strengthValue)
-        : 0;
+      doseValue > 0 && strengthValue > 0 ? Math.ceil(doseValue / strengthValue) : 0;
 
     const durationMinutes = Number(item.duration_days || 0) * 24 * 60;
 
-    const frequencyMinutes = getFrequencyInMinutes(
-      item.frequency_interval,
-      item.frequency_unit
-    );
+    const frequencyMinutes = getFrequencyInMinutes(item.frequency_interval, item.frequency_unit);
 
-    const dosesCount =
-      frequencyMinutes > 0
-        ? Math.ceil(durationMinutes / frequencyMinutes)
-        : 0;
+    const dosesCount = frequencyMinutes > 0 ? Math.ceil(durationMinutes / frequencyMinutes) : 0;
 
     const totalUnitsRequired = dosesCount * unitsPerDose;
 
-    const availableUnits = product
-      ? getAvailableInventoryByProductId(product.id)
-      : 0;
+    const availableUnits = product ? getAvailableInventoryByProductId(product.id) : 0;
 
     const stockGap = Math.max(totalUnitsRequired - availableUnits, 0);
 
-    const hasEnoughInventory =
-      totalUnitsRequired > 0 && availableUnits >= totalUnitsRequired;
+    const hasEnoughInventory = totalUnitsRequired > 0 && availableUnits >= totalUnitsRequired;
 
     return {
       product,
@@ -2241,14 +2103,8 @@ function PrescriptionPanel({
       availableUnits,
       stockGap,
       hasEnoughInventory,
-      doseLabel:
-        doseValue > 0
-          ? `${doseValue} ${product?.unit_of_measure ?? ""}`.trim()
-          : "",
-      frequencyLabel: buildFrequencyLabel(
-        item.frequency_interval,
-        item.frequency_unit
-      ),
+      doseLabel: doseValue > 0 ? `${doseValue} ${product?.unit_of_measure ?? ""}`.trim() : "",
+      frequencyLabel: buildFrequencyLabel(item.frequency_interval, item.frequency_unit),
     };
   }
 
@@ -2387,19 +2243,17 @@ function PrescriptionPanel({
       const newAvailable = currentAvailable - reservation.quantity;
       const newReserved = currentReserved + reservation.quantity;
 
-      const { error: movementError } = await supabase
-        .from("inventory_movements")
-        .insert({
-          clinic_id: CLINIC_ID,
-          lot_id: reservation.lot.id,
-          movement_type: "reservation",
-          source_location_id: reservation.lot.location_id ?? null,
-          destination_location_id: null,
-          quantity: reservation.quantity,
-          performed_by: null,
-          reason: `Reserved ${reservation.quantity} units of ${product.name} for prescription ${prescriptionId} / item ${prescriptionItemId}`,
-          created_at: new Date().toISOString(),
-        });
+      const { error: movementError } = await supabase.from("inventory_movements").insert({
+        clinic_id: CLINIC_ID,
+        lot_id: reservation.lot.id,
+        movement_type: "reservation",
+        source_location_id: reservation.lot.location_id ?? null,
+        destination_location_id: null,
+        quantity: reservation.quantity,
+        performed_by: null,
+        reason: `Reserved ${reservation.quantity} units of ${product.name} for prescription ${prescriptionId} / item ${prescriptionItemId}`,
+        created_at: new Date().toISOString(),
+      });
 
       if (movementError) {
         console.error("MOVEMENT ERROR", movementError);
@@ -2423,12 +2277,12 @@ function PrescriptionPanel({
         currentLots.map((lot) =>
           lot.id === reservation.lot.id
             ? {
-              ...lot,
-              quantity_available: newAvailable,
-              quantity_reserved: newReserved,
-            }
-            : lot
-        )
+                ...lot,
+                quantity_available: newAvailable,
+                quantity_reserved: newReserved,
+              }
+            : lot,
+        ),
       );
     }
 
@@ -2484,7 +2338,7 @@ function PrescriptionPanel({
 
         if (calc.unitsPerDose <= 0) {
           alert(
-            `Could not calculate units per dose for ${product.name}. Please check product strength.`
+            `Could not calculate units per dose for ${product.name}. Please check product strength.`,
           );
           return;
         }
@@ -2549,8 +2403,7 @@ function PrescriptionPanel({
           administration_time: getTimeFromDatetimeLocal(medication.start_at),
           instructions: medication.instructions?.trim() || clinicalReason,
           quantity_required: calc.totalUnitsRequired,
-          quantity_unit:
-            product?.presentation ?? product?.unit_of_measure ?? "units",
+          quantity_unit: product?.presentation ?? product?.unit_of_measure ?? "units",
           status: "ACTIVE",
           inventory_status: "PENDING_REVIEW",
         };
@@ -2568,8 +2421,7 @@ function PrescriptionPanel({
       }
 
       runMockAction("Updating prescription", {
-        detail:
-          "Prescription rebuilt successfully. Inventory was marked as pending review.",
+        detail: "Prescription rebuilt successfully. Inventory was marked as pending review.",
         success: "Prescription updated",
       });
 
@@ -2620,7 +2472,7 @@ function PrescriptionPanel({
 
         if (calc.unitsPerDose <= 0) {
           alert(
-            `Could not calculate units per dose for ${product.name}. Please check product strength.`
+            `Could not calculate units per dose for ${product.name}. Please check product strength.`,
           );
           return;
         }
@@ -2800,13 +2652,9 @@ function PrescriptionPanel({
               {isEditMode ? "Edit prescription" : "Create prescription"}
             </h2>
 
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Patient: {patientName}
-            </p>
+            <p className="text-[11px] text-muted-foreground mt-1">Patient: {patientName}</p>
 
-            <p className="text-[10.5px] text-muted-foreground mt-1">
-              Patient ID: {patientId}
-            </p>
+            <p className="text-[10.5px] text-muted-foreground mt-1">Patient ID: {patientId}</p>
 
             {isEditMode && (
               <p className="text-[10.5px] text-warning mt-1">
@@ -2877,8 +2725,8 @@ function PrescriptionPanel({
               {doctors.length === 0 && (
                 <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
                   <p className="text-[11px] text-warning leading-relaxed">
-                    No physicians were found in the doctors table. Check if the
-                    table has records and if Supabase RLS allows SELECT access.
+                    No physicians were found in the doctors table. Check if the table has records
+                    and if Supabase RLS allows SELECT access.
                   </p>
                 </div>
               )}
@@ -2899,9 +2747,7 @@ function PrescriptionPanel({
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-[14px] font-semibold">
-                      Medications
-                    </h3>
+                    <h3 className="text-[14px] font-semibold">Medications</h3>
 
                     <p className="text-[11px] text-muted-foreground">
                       {isEditMode
@@ -2931,9 +2777,7 @@ function PrescriptionPanel({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-[12px] font-semibold">
-                            Medication #{index + 1}
-                          </p>
+                          <p className="text-[12px] font-semibold">Medication #{index + 1}</p>
 
                           <p className="text-[10px] text-muted-foreground mt-0.5">
                             {product?.name ?? "Select medication"}
@@ -2948,7 +2792,7 @@ function PrescriptionPanel({
                             "h-8 px-2 rounded-md text-[11px] inline-flex items-center gap-1 border",
                             medications.length === 1
                               ? "text-muted-foreground cursor-not-allowed border-border"
-                              : "text-warning border-warning/30 hover:bg-warning/10"
+                              : "text-warning border-warning/30 hover:bg-warning/10",
                           )}
                         >
                           <Trash2 className="size-3.5" />
@@ -2960,9 +2804,7 @@ function PrescriptionPanel({
                         <ControlledSelect
                           label="Medication"
                           value={medication.product_id}
-                          onChange={(value) =>
-                            handleProductChange(medication.local_id, value)
-                          }
+                          onChange={(value) => handleProductChange(medication.local_id, value)}
                           options={products.map((item) => ({
                             value: item.id,
                             label: item.name,
@@ -2973,36 +2815,24 @@ function PrescriptionPanel({
                       {product && (
                         <div className="rounded-lg border border-border bg-card p-3">
                           <div className="grid grid-cols-3 gap-3 text-[11px]">
-                            <Info
-                              label="Generic"
-                              value={product.generic_name ?? "-"}
-                            />
+                            <Info label="Generic" value={product.generic_name ?? "-"} />
 
-                            <Info
-                              label="Presentation"
-                              value={product.presentation ?? "-"}
-                            />
+                            <Info label="Presentation" value={product.presentation ?? "-"} />
 
                             <Info
                               label="Strength"
-                              value={`${product.strength_value ?? "-"} ${product.unit_of_measure ?? ""
-                                }`}
+                              value={`${product.strength_value ?? "-"} ${
+                                product.unit_of_measure ?? ""
+                              }`}
                             />
 
-                            <Info
-                              label="Storage"
-                              value={product.storage_condition ?? "-"}
-                            />
+                            <Info label="Storage" value={product.storage_condition ?? "-"} />
 
-                            <Info
-                              label="Dose unit"
-                              value={product.unit_of_measure ?? "-"}
-                            />
+                            <Info label="Dose unit" value={product.unit_of_measure ?? "-"} />
 
                             <Info
                               label="Available stock"
-                              value={`${calc.availableUnits} ${product.presentation ?? "units"
-                                }`}
+                              value={`${calc.availableUnits} ${product.presentation ?? "units"}`}
                             />
                           </div>
                         </div>
@@ -3058,10 +2888,7 @@ function PrescriptionPanel({
                           value={medication.frequency_unit}
                           onChange={(value) =>
                             updateMedication(medication.local_id, {
-                              frequency_unit: value as
-                                | "minutes"
-                                | "hours"
-                                | "days",
+                              frequency_unit: value as "minutes" | "hours" | "days",
                             })
                           }
                           options={FREQUENCY_UNIT_OPTIONS}
@@ -3114,13 +2941,11 @@ function PrescriptionPanel({
                           "rounded-lg border p-3",
                           calc.hasEnoughInventory
                             ? "border-border bg-card"
-                            : "border-warning/40 bg-warning/10"
+                            : "border-warning/40 bg-warning/10",
                         )}
                       >
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-[12px] font-semibold">
-                            Prescription calculation
-                          </p>
+                          <p className="text-[12px] font-semibold">Prescription calculation</p>
 
                           <span
                             className={cn(
@@ -3129,7 +2954,7 @@ function PrescriptionPanel({
                                 ? "text-warning"
                                 : calc.hasEnoughInventory
                                   ? "text-success"
-                                  : "text-warning"
+                                  : "text-warning",
                             )}
                           >
                             {isEditMode
@@ -3143,43 +2968,28 @@ function PrescriptionPanel({
                         <div className="grid grid-cols-5 gap-3 text-[11px]">
                           <Info label="Dose" value={calc.doseLabel || "-"} />
 
-                          <Info
-                            label="Units per dose"
-                            value={`${calc.unitsPerDose || "-"}`}
-                          />
+                          <Info label="Units per dose" value={`${calc.unitsPerDose || "-"}`} />
 
-                          <Info
-                            label="Doses"
-                            value={`${calc.dosesCount || "-"}`}
-                          />
+                          <Info label="Doses" value={`${calc.dosesCount || "-"}`} />
 
-                          <Info
-                            label="Required"
-                            value={`${calc.totalUnitsRequired || "-"}`}
-                          />
+                          <Info label="Required" value={`${calc.totalUnitsRequired || "-"}`} />
 
-                          <Info
-                            label="Available"
-                            value={`${calc.availableUnits}`}
-                          />
+                          <Info label="Available" value={`${calc.availableUnits}`} />
                         </div>
 
                         {isEditMode && (
                           <p className="mt-3 text-[10.5px] text-warning leading-relaxed">
-                            This edited prescription will be marked as pending
-                            inventory review. It will not automatically reserve stock.
+                            This edited prescription will be marked as pending inventory review. It
+                            will not automatically reserve stock.
                           </p>
                         )}
 
-                        {!isEditMode &&
-                          !calc.hasEnoughInventory &&
-                          calc.totalUnitsRequired > 0 && (
-                            <p className="mt-3 text-[10.5px] text-warning leading-relaxed">
-                              The prescription can still be issued, but no
-                              inventory reservation will be completed for this
-                              medication. A stock alert will be generated.
-                            </p>
-                          )}
+                        {!isEditMode && !calc.hasEnoughInventory && calc.totalUnitsRequired > 0 && (
+                          <p className="mt-3 text-[10.5px] text-warning leading-relaxed">
+                            The prescription can still be issued, but no inventory reservation will
+                            be completed for this medication. A stock alert will be generated.
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -3188,10 +2998,7 @@ function PrescriptionPanel({
 
               <div className="rounded-xl border border-border bg-accent/40 p-4">
                 <div className="grid grid-cols-3 gap-4 text-[11px]">
-                  <Info
-                    label="Medications"
-                    value={`${prescriptionSummary.medicationCount}`}
-                  />
+                  <Info label="Medications" value={`${prescriptionSummary.medicationCount}`} />
 
                   <Info
                     label="Total units required"
@@ -3223,7 +3030,7 @@ function PrescriptionPanel({
               "h-9 px-4 rounded-md text-[12px] font-semibold",
               saving || !prescriptionSummary.allValid
                 ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-primary text-primary-foreground"
+                : "bg-primary text-primary-foreground",
             )}
           >
             {saving
@@ -3280,7 +3087,7 @@ function ControlledInput({
           className={cn(
             "w-full h-9 rounded-md border border-border bg-card px-3 text-[12.5px] text-foreground shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15",
             suffix && "pr-14",
-            disabled && "cursor-not-allowed bg-secondary/60 text-muted-foreground"
+            disabled && "cursor-not-allowed bg-secondary/60 text-muted-foreground",
           )}
         />
 
@@ -3321,18 +3128,14 @@ function ControlledSelect({
           className={cn(
             "w-full h-9 appearance-none rounded-md border border-border bg-card px-3 pr-9 text-[12.5px] text-foreground shadow-sm outline-none transition-colors hover:bg-secondary/60 focus:border-primary focus:ring-2 focus:ring-primary/15",
             disabled &&
-            "cursor-not-allowed bg-secondary/60 text-muted-foreground hover:bg-secondary/60"
+              "cursor-not-allowed bg-secondary/60 text-muted-foreground hover:bg-secondary/60",
           )}
         >
-          {options.length === 0 && (
-            <option value="">No options available</option>
-          )}
+          {options.length === 0 && <option value="">No options available</option>}
 
           {options.map((option) => {
             const normalized =
-              typeof option === "string"
-                ? { value: option, label: option }
-                : option;
+              typeof option === "string" ? { value: option, label: option } : option;
 
             return (
               <option key={normalized.value} value={normalized.value}>
@@ -3351,9 +3154,7 @@ function ControlledSelect({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
 
       <p className="text-[12px] font-medium mt-1">{value}</p>
     </div>
@@ -3376,9 +3177,7 @@ function SidePanel({
       <div className="flex items-center gap-2 mb-3">
         <Icon className="size-3.5 text-muted-foreground" />
 
-        <h3 className="text-[12px] font-semibold tracking-tight">
-          {title}
-        </h3>
+        <h3 className="text-[12px] font-semibold tracking-tight">{title}</h3>
       </div>
 
       <div className="space-y-2">{children}</div>
@@ -3405,7 +3204,7 @@ function Row({
           !tone && "text-foreground",
           tone === "success" && "text-success",
           tone === "warning" && "text-warning",
-          tone === "primary" && "text-primary"
+          tone === "primary" && "text-primary",
         )}
       >
         {value}
@@ -3541,13 +3340,7 @@ ${medicationText}
 Please follow the instructions provided by your healthcare professional. If you have any questions, contact your clinic before taking the medication.`;
 }
 
-function openWhatsAppReminder({
-  phone,
-  message,
-}: {
-  phone: string | null;
-  message: string;
-}) {
+function openWhatsAppReminder({ phone, message }: { phone: string | null; message: string }) {
   if (!phone) {
     alert("Patient does not have a phone number");
     return;

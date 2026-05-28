@@ -56,23 +56,23 @@
 :root {
   --radius: 0.75rem;
   /* Kumpels Core — premium clinical operating system */
-  --background: oklch(0.984 0.003 247);          /* #F8FAFC */
-  --foreground: oklch(0.207 0.034 264);          /* #0F172A */
-  --card: oklch(1 0 0);                          /* #FFFFFF */
+  --background: oklch(0.984 0.003 247); /* #F8FAFC */
+  --foreground: oklch(0.207 0.034 264); /* #0F172A */
+  --card: oklch(1 0 0); /* #FFFFFF */
   --card-foreground: oklch(0.207 0.034 264);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.207 0.034 264);
-  --primary: oklch(0.221 0.176 268);             /* #000C86 — Kumpels Blue */
+  --primary: oklch(0.221 0.176 268); /* #000C86 — Kumpels Blue */
   --primary-foreground: oklch(0.984 0.003 247);
   --secondary: oklch(0.968 0.005 247);
   --secondary-foreground: oklch(0.207 0.034 264);
   --muted: oklch(0.968 0.005 247);
-  --muted-foreground: oklch(0.553 0.039 256);    /* #64748B */
-  --accent: oklch(0.955 0.022 268);              /* #EAF1FF soft blue */
+  --muted-foreground: oklch(0.553 0.039 256); /* #64748B */
+  --accent: oklch(0.955 0.022 268); /* #EAF1FF soft blue */
   --accent-foreground: oklch(0.221 0.176 268);
-  --destructive: oklch(0.585 0.224 27);          /* #DC2626 */
+  --destructive: oklch(0.585 0.224 27); /* #DC2626 */
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.916 0.013 256);              /* #E2E8F0 */
+  --border: oklch(0.916 0.013 256); /* #E2E8F0 */
   --input: oklch(0.916 0.013 256);
   --ring: oklch(0.221 0.176 268);
   --chart-1: oklch(0.221 0.176 268);
@@ -90,10 +90,10 @@
   --sidebar-ring: oklch(0.221 0.176 268);
   --clinical: oklch(0.221 0.176 268);
   --clinical-foreground: oklch(1 0 0);
-  --clinical-soft: oklch(0.955 0.022 268);       /* #EAF1FF */
-  --success: oklch(0.598 0.165 146);             /* #16A34A */
-  --warning: oklch(0.681 0.165 50);              /* #D97706 */
-  --critical: oklch(0.585 0.224 27);             /* #DC2626 */
+  --clinical-soft: oklch(0.955 0.022 268); /* #EAF1FF */
+  --success: oklch(0.598 0.165 146); /* #16A34A */
+  --warning: oklch(0.681 0.165 50); /* #D97706 */
+  --critical: oklch(0.585 0.224 27); /* #DC2626 */
 }
 
 .dark {
@@ -144,6 +144,6 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   }
 }

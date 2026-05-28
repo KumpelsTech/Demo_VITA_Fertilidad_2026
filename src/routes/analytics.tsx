@@ -7,10 +7,28 @@ export const Route = createFileRoute("/analytics")({
 });
 
 const metrics = [
-  { label: "Clinical pregnancy rate", value: "61.4%", delta: "+3.2", up: true, foot: "Last 12 cycles" },
+  {
+    label: "Clinical pregnancy rate",
+    value: "61.4%",
+    delta: "+3.2",
+    up: true,
+    foot: "Last 12 cycles",
+  },
   { label: "Cycle cancellation", value: "4.1%", delta: "−1.0", up: true, foot: "Goal < 5%" },
-  { label: "Avg. days to retrieval", value: "11.2", delta: "−0.8", up: true, foot: "Stim efficiency" },
-  { label: "Medication adherence", value: "98.4%", delta: "+1.1", up: true, foot: "WhatsApp reminders" },
+  {
+    label: "Avg. days to retrieval",
+    value: "11.2",
+    delta: "−0.8",
+    up: true,
+    foot: "Stim efficiency",
+  },
+  {
+    label: "Medication adherence",
+    value: "98.4%",
+    delta: "+1.1",
+    up: true,
+    foot: "WhatsApp reminders",
+  },
   { label: "Donor → matched", value: "42%", delta: "+5", up: true, foot: "Funnel conversion" },
   { label: "OR utilization", value: "84%", delta: "stable", up: false, foot: "Target 80–90%" },
 ];
@@ -23,14 +41,21 @@ function AnalyticsPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Operational intelligence</h1>
-          <p className="text-[13px] text-muted-foreground mt-1">Clinical outcomes, workflow efficiency, and adherence</p>
+          <p className="text-[13px] text-muted-foreground mt-1">
+            Clinical outcomes, workflow efficiency, and adherence
+          </p>
         </div>
         <div className="flex items-center gap-1 text-[11px]">
           {["7d", "30d", "90d", "12m", "YTD"].map((p, i) => (
-            <button key={p} className={cn(
-              "px-2.5 h-7 rounded-md transition-colors",
-              i === 3 ? "bg-accent text-primary font-medium" : "text-muted-foreground hover:bg-secondary",
-            )}>
+            <button
+              key={p}
+              className={cn(
+                "px-2.5 h-7 rounded-md transition-colors",
+                i === 3
+                  ? "bg-accent text-primary font-medium"
+                  : "text-muted-foreground hover:bg-secondary",
+              )}
+            >
               {p}
             </button>
           ))}
@@ -65,10 +90,12 @@ function AnalyticsPage() {
             <p className="text-[11px] font-medium text-muted-foreground">{m.label}</p>
             <div className="flex items-end gap-2 mt-2">
               <p className="text-[26px] font-semibold tracking-tight leading-none">{m.value}</p>
-              <span className={cn(
-                "inline-flex items-center gap-0.5 text-[11px] font-medium pb-1",
-                m.up ? "text-success" : "text-muted-foreground",
-              )}>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 text-[11px] font-medium pb-1",
+                  m.up ? "text-success" : "text-muted-foreground",
+                )}
+              >
                 {m.up ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 {m.delta}
               </span>
@@ -92,7 +119,10 @@ function AnalyticsPage() {
           <div className="h-48 flex items-end gap-1.5">
             {outcomes.map((h, i) => (
               <div key={i} className="flex-1 flex flex-col justify-end h-full group">
-                <div className="w-full bg-primary/15 rounded-t-sm relative" style={{ height: `${h}%` }}>
+                <div
+                  className="w-full bg-primary/15 rounded-t-sm relative"
+                  style={{ height: `${h}%` }}
+                >
                   <div className="absolute inset-0 bg-primary rounded-t-sm opacity-90" />
                   <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                     {h}%
@@ -102,7 +132,22 @@ function AnalyticsPage() {
             ))}
           </div>
           <div className="flex justify-between mt-2 text-[10px] text-muted-foreground tabular-nums">
-            {["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"].map((m) => <span key={m}>{m}</span>)}
+            {[
+              "Jul",
+              "Aug",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+              "Jan",
+              "Feb",
+              "Mar",
+              "Apr",
+              "May",
+              "Jun",
+            ].map((m) => (
+              <span key={m}>{m}</span>
+            ))}
           </div>
         </div>
 
@@ -125,10 +170,15 @@ function AnalyticsPage() {
               <div key={s.label}>
                 <div className="flex justify-between text-[12px] mb-1">
                   <span className="font-medium">{s.label}</span>
-                  <span className="text-muted-foreground tabular-nums">{s.count} · {s.pct}%</span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {s.count} · {s.pct}%
+                  </span>
                 </div>
                 <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: `${s.pct * 2}%` }} />
+                  <div
+                    className="h-full bg-primary rounded-full"
+                    style={{ width: `${s.pct * 2}%` }}
+                  />
                 </div>
               </div>
             ))}

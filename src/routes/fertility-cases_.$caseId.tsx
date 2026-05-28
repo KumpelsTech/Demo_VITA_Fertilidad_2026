@@ -27,14 +27,28 @@ export const Route = createFileRoute("/fertility-cases_/$caseId")({
   component: CaseDetailPage,
 });
 
-const STAGES = ["Consult", "Baseline", "Stim", "Trigger", "Retrieval", "Embryo dev", "FET prep", "Transfer", "βhCG", "Follow-up"];
+const STAGES = [
+  "Consult",
+  "Baseline",
+  "Stim",
+  "Trigger",
+  "Retrieval",
+  "Embryo dev",
+  "FET prep",
+  "Transfer",
+  "βhCG",
+  "Follow-up",
+];
 
 function CaseDetailPage() {
   const { caseId } = Route.useParams();
 
   return (
     <div className="p-6 lg:p-8 max-w-[1500px] mx-auto space-y-6">
-      <Link to="/fertility-cases" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground">
+      <Link
+        to="/fertility-cases"
+        className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="size-3.5" /> All cases
       </Link>
 
@@ -44,8 +58,12 @@ function CaseDetailPage() {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-semibold tracking-tight">Chen · Park</h1>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{caseId}</span>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent text-primary">Embryo dev · Day 17</span>
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                {caseId}
+              </span>
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent text-primary">
+                Embryo dev · Day 17
+              </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-warning/10 text-warning">
                 <AlertTriangle className="size-3" /> Decision needed
               </span>
@@ -74,33 +92,45 @@ function CaseDetailPage() {
           </div>
           <p className="text-[12px] text-foreground/85 leading-relaxed">
             <span className="font-semibold text-primary">AI summary · </span>
-            11 oocytes retrieved · 9 mature · 4 fertilized via ICSI with donor DS-118 · 2 embryos developing slower than baseline. Consider extended culture to day 6.
-            Luteal support active. No outstanding consents. Surrogate not assigned.
+            11 oocytes retrieved · 9 mature · 4 fertilized via ICSI with donor DS-118 · 2 embryos
+            developing slower than baseline. Consider extended culture to day 6. Luteal support
+            active. No outstanding consents. Surrogate not assigned.
           </p>
         </div>
 
         {/* Stage rail */}
         <div className="mt-6 relative pt-2 pb-1">
           <div className="absolute left-0 right-0 top-[18px] h-px bg-border" />
-          <div className="absolute left-0 top-[17px] h-[3px] bg-primary rounded-full" style={{ width: `${(5.5 / STAGES.length) * 100}%` }} />
+          <div
+            className="absolute left-0 top-[17px] h-[3px] bg-primary rounded-full"
+            style={{ width: `${(5.5 / STAGES.length) * 100}%` }}
+          />
           <div className="relative grid grid-cols-10 gap-1">
             {STAGES.map((label, i) => {
               const done = i < 5;
               const active = i === 5;
               return (
                 <div key={label} className="flex flex-col items-center text-center">
-                  <div className={cn(
-                    "size-9 rounded-full flex items-center justify-center text-[10px] font-semibold ring-4 ring-card",
-                    done && "bg-primary text-primary-foreground",
-                    active && "bg-card border-2 border-primary text-primary",
-                    !done && !active && "bg-card border border-border text-muted-foreground",
-                  )}>
+                  <div
+                    className={cn(
+                      "size-9 rounded-full flex items-center justify-center text-[10px] font-semibold ring-4 ring-card",
+                      done && "bg-primary text-primary-foreground",
+                      active && "bg-card border-2 border-primary text-primary",
+                      !done && !active && "bg-card border border-border text-muted-foreground",
+                    )}
+                  >
                     {done ? <CheckCircle2 className="size-3.5" /> : i + 1}
                   </div>
-                  <p className={cn(
-                    "mt-1.5 text-[10px] font-medium leading-tight",
-                    active ? "text-primary" : done ? "text-foreground/70" : "text-muted-foreground",
-                  )}>
+                  <p
+                    className={cn(
+                      "mt-1.5 text-[10px] font-medium leading-tight",
+                      active
+                        ? "text-primary"
+                        : done
+                          ? "text-foreground/70"
+                          : "text-muted-foreground",
+                    )}
+                  >
                     {label}
                   </p>
                 </div>
@@ -119,12 +149,51 @@ function CaseDetailPage() {
         {/* MAIN COLUMN */}
         <div className="lg:col-span-2 space-y-6">
           {/* Active prescriptions linked to inventory */}
-          <Section title="Active prescriptions" kicker="Linked to inventory · live adherence" action={<Link to="/smart-prescriptions" className="text-[12px] font-medium text-primary hover:underline inline-flex items-center gap-0.5">Prescribe <ChevronRight className="size-3" /></Link>}>
+          <Section
+            title="Active prescriptions"
+            kicker="Linked to inventory · live adherence"
+            action={
+              <Link
+                to="/smart-prescriptions"
+                className="text-[12px] font-medium text-primary hover:underline inline-flex items-center gap-0.5"
+              >
+                Prescribe <ChevronRight className="size-3" />
+              </Link>
+            }
+          >
             <div className="space-y-2">
-              <RxRow med="Progesterone 200mg vag." dose="3× daily" stage="Luteal" status="ok" lot="LT-9012 · exp 11/2026" adherence={96} />
-              <RxRow med="Estradiol valerate 6mg" dose="Daily morning" stage="Endometrial prep" status="ok" lot="LT-8845 · exp 02/2027" adherence={100} />
-              <RxRow med="Cabergoline 0.5mg" dose="Single" stage="Post-OPU" status="ok" lot="LT-8801 · exp 08/2026" adherence={100} />
-              <RxRow med="Aspirin 100mg" dose="Daily" stage="Support" status="warn" lot="Pending dispense" adherence={0} />
+              <RxRow
+                med="Progesterone 200mg vag."
+                dose="3× daily"
+                stage="Luteal"
+                status="ok"
+                lot="LT-9012 · exp 11/2026"
+                adherence={96}
+              />
+              <RxRow
+                med="Estradiol valerate 6mg"
+                dose="Daily morning"
+                stage="Endometrial prep"
+                status="ok"
+                lot="LT-8845 · exp 02/2027"
+                adherence={100}
+              />
+              <RxRow
+                med="Cabergoline 0.5mg"
+                dose="Single"
+                stage="Post-OPU"
+                status="ok"
+                lot="LT-8801 · exp 08/2026"
+                adherence={100}
+              />
+              <RxRow
+                med="Aspirin 100mg"
+                dose="Daily"
+                stage="Support"
+                status="warn"
+                lot="Pending dispense"
+                adherence={0}
+              />
             </div>
           </Section>
 
@@ -134,7 +203,18 @@ function CaseDetailPage() {
           </Section>
 
           {/* Gametes & embryos */}
-          <Section title="Biological inventory" kicker="Traceable from source to transfer" action={<Link to="/laboratory-gamete-bank" className="text-[12px] font-medium text-primary hover:underline">Open lab</Link>}>
+          <Section
+            title="Biological inventory"
+            kicker="Traceable from source to transfer"
+            action={
+              <Link
+                to="/laboratory-gamete-bank"
+                className="text-[12px] font-medium text-primary hover:underline"
+              >
+                Open lab
+              </Link>
+            }
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <BioCard
                 kind="Oocytes"
@@ -187,9 +267,24 @@ function CaseDetailPage() {
           </SidePanel>
 
           <SidePanel title="Patient follow-up" icon={MessageCircle} action="Open chat">
-            <FollowupRow time="2h ago" who="J. Chen" text="Confirmed evening progesterone ✅" tone="success" />
-            <FollowupRow time="Today 09:12" who="System" text="Sent: Day 3 embryo update card" tone="muted" />
-            <FollowupRow time="Yest" who="S. Park" text="Asked: ok to travel next week?" tone="warning" />
+            <FollowupRow
+              time="2h ago"
+              who="J. Chen"
+              text="Confirmed evening progesterone ✅"
+              tone="success"
+            />
+            <FollowupRow
+              time="Today 09:12"
+              who="System"
+              text="Sent: Day 3 embryo update card"
+              tone="muted"
+            />
+            <FollowupRow
+              time="Yest"
+              who="S. Park"
+              text="Asked: ok to travel next week?"
+              tone="warning"
+            />
           </SidePanel>
 
           <SidePanel title="Consents" icon={FileSignature} action="All docs">
@@ -213,10 +308,20 @@ function RelationshipMap() {
   return (
     <div className="relative rounded-xl border border-border bg-gradient-to-br from-accent/30 via-card to-card p-6 overflow-hidden">
       {/* SVG connectors */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        preserveAspectRatio="none"
+      >
         <defs>
           <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
-            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-border" opacity="0.4" />
+            <path
+              d="M 24 0 L 0 0 0 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              className="text-border"
+              opacity="0.4"
+            />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
@@ -268,22 +373,26 @@ function Node({
   tone: "primary" | "muted" | "clinical" | "success" | "warning";
 }) {
   return (
-    <div className={cn(
-      "flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2 shadow-sm",
-      tone === "primary" && "border-accent",
-      tone === "muted" && "border-border",
-      tone === "clinical" && "border-accent",
-      tone === "success" && "border-success/30",
-      tone === "warning" && "border-warning/30",
-    )}>
-      <div className={cn(
-        "size-7 rounded-md flex items-center justify-center shrink-0",
-        tone === "primary" && "bg-accent text-primary",
-        tone === "muted" && "bg-secondary text-muted-foreground",
-        tone === "clinical" && "bg-accent text-primary",
-        tone === "success" && "bg-success/10 text-success",
-        tone === "warning" && "bg-warning/10 text-warning",
-      )}>
+    <div
+      className={cn(
+        "flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2 shadow-sm",
+        tone === "primary" && "border-accent",
+        tone === "muted" && "border-border",
+        tone === "clinical" && "border-accent",
+        tone === "success" && "border-success/30",
+        tone === "warning" && "border-warning/30",
+      )}
+    >
+      <div
+        className={cn(
+          "size-7 rounded-md flex items-center justify-center shrink-0",
+          tone === "primary" && "bg-accent text-primary",
+          tone === "muted" && "bg-secondary text-muted-foreground",
+          tone === "clinical" && "bg-accent text-primary",
+          tone === "success" && "bg-success/10 text-success",
+          tone === "warning" && "bg-warning/10 text-warning",
+        )}
+      >
         <Icon className="size-3.5" />
       </div>
       <div className="min-w-0">
@@ -298,7 +407,9 @@ function Connector({ label }: { label: string }) {
   return (
     <div className="hidden md:flex flex-col items-center justify-center">
       <div className="w-full h-px bg-gradient-to-r from-border via-primary/40 to-border" />
-      <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
     </div>
   );
 }
@@ -351,9 +462,13 @@ function RxRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <p className="text-[12px] font-semibold truncate">{med}</p>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-primary font-medium">{stage}</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent text-primary font-medium">
+            {stage}
+          </span>
         </div>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{dose} · {lot}</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          {dose} · {lot}
+        </p>
       </div>
       <div className="hidden sm:flex flex-col items-end shrink-0">
         <div className="flex items-center gap-1.5">
@@ -363,11 +478,18 @@ function RxRow({
               style={{ width: `${adherence}%` }}
             />
           </div>
-          <span className={cn("text-[10px] font-mono tabular-nums font-semibold", status === "ok" ? "text-success" : "text-warning")}>
+          <span
+            className={cn(
+              "text-[10px] font-mono tabular-nums font-semibold",
+              status === "ok" ? "text-success" : "text-warning",
+            )}
+          >
             {adherence}%
           </span>
         </div>
-        <span className="text-[9px] text-muted-foreground mt-0.5 uppercase tracking-wider">adherence</span>
+        <span className="text-[9px] text-muted-foreground mt-0.5 uppercase tracking-wider">
+          adherence
+        </span>
       </div>
     </div>
   );
@@ -375,13 +497,55 @@ function RxRow({
 
 function Timeline() {
   const events = [
-    { time: "Today · 14:08", icon: Sparkles, title: "AI flagged 2 embryos as slow-growing", meta: "Recommendation: extended culture to D6", tone: "warning" as const },
-    { time: "Today · 09:00", icon: FlaskConical, title: "Day 3 embryo grading complete", meta: "Lab · 4 cleaving · 2 fast / 2 slow", tone: "info" as const },
-    { time: "Yest · 11:30", icon: Activity, title: "Fertilization check · 4/9 fertilized", meta: "ICSI with donor DS-118", tone: "success" as const },
-    { time: "May 19 · 08:45", icon: Activity, title: "OPU completed · 11 oocytes", meta: "OR-4 · Dr. Vance · Embryologist L. Reyes", tone: "success" as const },
-    { time: "May 18 · 21:45", icon: Pill, title: "Ovidrel trigger confirmed", meta: "Administered 21:47 · +2m vs plan", tone: "success" as const },
-    { time: "May 12", icon: FileSignature, title: "Donor sperm consent signed", meta: "Digital signature · vial reserved", tone: "muted" as const },
-    { time: "Apr 28", icon: Users, title: "Case opened · ICSI / donor sperm", meta: "Intended parents enrolled · plan v1", tone: "muted" as const },
+    {
+      time: "Today · 14:08",
+      icon: Sparkles,
+      title: "AI flagged 2 embryos as slow-growing",
+      meta: "Recommendation: extended culture to D6",
+      tone: "warning" as const,
+    },
+    {
+      time: "Today · 09:00",
+      icon: FlaskConical,
+      title: "Day 3 embryo grading complete",
+      meta: "Lab · 4 cleaving · 2 fast / 2 slow",
+      tone: "info" as const,
+    },
+    {
+      time: "Yest · 11:30",
+      icon: Activity,
+      title: "Fertilization check · 4/9 fertilized",
+      meta: "ICSI with donor DS-118",
+      tone: "success" as const,
+    },
+    {
+      time: "May 19 · 08:45",
+      icon: Activity,
+      title: "OPU completed · 11 oocytes",
+      meta: "OR-4 · Dr. Vance · Embryologist L. Reyes",
+      tone: "success" as const,
+    },
+    {
+      time: "May 18 · 21:45",
+      icon: Pill,
+      title: "Ovidrel trigger confirmed",
+      meta: "Administered 21:47 · +2m vs plan",
+      tone: "success" as const,
+    },
+    {
+      time: "May 12",
+      icon: FileSignature,
+      title: "Donor sperm consent signed",
+      meta: "Digital signature · vial reserved",
+      tone: "muted" as const,
+    },
+    {
+      time: "Apr 28",
+      icon: Users,
+      title: "Case opened · ICSI / donor sperm",
+      meta: "Intended parents enrolled · plan v1",
+      tone: "muted" as const,
+    },
   ];
 
   return (
@@ -390,13 +554,15 @@ function Timeline() {
       <ul className="space-y-4">
         {events.map((e, i) => (
           <li key={i} className="relative flex gap-3">
-            <div className={cn(
-              "size-8 rounded-full border flex items-center justify-center shrink-0 bg-card z-10",
-              e.tone === "success" && "border-success/30 text-success",
-              e.tone === "info" && "border-accent text-primary bg-accent/40",
-              e.tone === "warning" && "border-warning/30 text-warning",
-              e.tone === "muted" && "border-border text-muted-foreground",
-            )}>
+            <div
+              className={cn(
+                "size-8 rounded-full border flex items-center justify-center shrink-0 bg-card z-10",
+                e.tone === "success" && "border-success/30 text-success",
+                e.tone === "info" && "border-accent text-primary bg-accent/40",
+                e.tone === "warning" && "border-warning/30 text-warning",
+                e.tone === "muted" && "border-border text-muted-foreground",
+              )}
+            >
               <e.icon className="size-3.5" />
             </div>
             <div className="flex-1 pb-1">
@@ -444,10 +610,12 @@ function BioCard({
             <p className="text-[10px] font-mono text-muted-foreground">{id}</p>
           </div>
         </div>
-        <span className={cn(
-          "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
-          tone === "warning" ? "bg-warning/10 text-warning" : "bg-success/10 text-success",
-        )}>
+        <span
+          className={cn(
+            "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+            tone === "warning" ? "bg-warning/10 text-warning" : "bg-success/10 text-success",
+          )}
+        >
           {status}
         </span>
       </div>
@@ -491,32 +659,54 @@ function SidePanel({
   );
 }
 
-function Row({ label, value, tone }: { label: string; value: string; tone?: "success" | "warning" | "primary" }) {
+function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "success" | "warning" | "primary";
+}) {
   return (
     <div className="flex items-center justify-between gap-2 text-[11px]">
       <span className="text-muted-foreground">{label}</span>
-      <span className={cn(
-        "font-medium tabular-nums text-right",
-        !tone && "text-foreground",
-        tone === "success" && "text-success",
-        tone === "warning" && "text-warning",
-        tone === "primary" && "text-primary",
-      )}>
+      <span
+        className={cn(
+          "font-medium tabular-nums text-right",
+          !tone && "text-foreground",
+          tone === "success" && "text-success",
+          tone === "warning" && "text-warning",
+          tone === "primary" && "text-primary",
+        )}
+      >
         {value}
       </span>
     </div>
   );
 }
 
-function FollowupRow({ time, who, text, tone }: { time: string; who: string; text: string; tone: "success" | "muted" | "warning" }) {
+function FollowupRow({
+  time,
+  who,
+  text,
+  tone,
+}: {
+  time: string;
+  who: string;
+  text: string;
+  tone: "success" | "muted" | "warning";
+}) {
   return (
     <div className="flex items-start gap-2 text-[11px]">
-      <span className={cn(
-        "size-1.5 rounded-full mt-1.5 shrink-0",
-        tone === "success" && "bg-success",
-        tone === "muted" && "bg-border",
-        tone === "warning" && "bg-warning",
-      )} />
+      <span
+        className={cn(
+          "size-1.5 rounded-full mt-1.5 shrink-0",
+          tone === "success" && "bg-success",
+          tone === "muted" && "bg-border",
+          tone === "warning" && "bg-warning",
+        )}
+      />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="font-semibold">{who}</span>

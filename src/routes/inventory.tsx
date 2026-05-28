@@ -38,23 +38,33 @@ import {
 import { cn } from "@/lib/utils";
 import { runMockAction, notify } from "@/lib/mock-actions";
 import {
-  LOTS, LOCATIONS, MOVEMENTS, KITS, PRODUCTS, SUPPLIERS, TRANSFERS,
-  COLD_UNITS, INVIMA_ALERTS, lotStatusColor, movementMeta,
-  type MasterProduct, type Supplier, type Transfer, type TransferStatus,
-  type ColdUnit, type InvimaAlert, type LotStatus,
+  LOTS,
+  LOCATIONS,
+  MOVEMENTS,
+  KITS,
+  PRODUCTS,
+  SUPPLIERS,
+  TRANSFERS,
+  COLD_UNITS,
+  INVIMA_ALERTS,
+  lotStatusColor,
+  movementMeta,
+  type MasterProduct,
+  type Supplier,
+  type Transfer,
+  type TransferStatus,
+  type ColdUnit,
+  type InvimaAlert,
+  type LotStatus,
 } from "@/lib/inventory-data";
 
 import { useEffect } from "react";
 
-import {
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 import { useMemo, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
-
 
 export const Route = createFileRoute("/inventory")({
   component: InventoryPage,
@@ -108,7 +118,6 @@ interface InventoryLot {
   daysToExpiry: number;
 }
 
-
 function InventoryPage() {
   const [tab, setTab] = useState<Tab>("master");
   const [productOpen, setProductOpen] = useState<MasterProduct | null>(null);
@@ -142,7 +151,11 @@ function InventoryPage() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => runMockAction("Activating barcode scanner", { success: "Scanner ready · point at lot QR" })}
+                onClick={() =>
+                  runMockAction("Activating barcode scanner", {
+                    success: "Scanner ready · point at lot QR",
+                  })
+                }
                 className="inline-flex items-center gap-1.5 h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary transition-colors"
               >
                 <ScanLine className="size-3.5" /> Scan
@@ -168,13 +181,15 @@ function InventoryPage() {
                     "inline-flex items-center gap-1.5 px-3 h-10 text-[12.5px] font-medium border-b-2 transition-colors whitespace-nowrap",
                     active
                       ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <t.icon className="size-3.5" />
                   {t.label}
                   {t.hint && (
-                    <span className="text-[10px] text-muted-foreground/70 font-normal hidden lg:inline">· {t.hint}</span>
+                    <span className="text-[10px] text-muted-foreground/70 font-normal hidden lg:inline">
+                      · {t.hint}
+                    </span>
                   )}
                 </button>
               );
@@ -187,7 +202,9 @@ function InventoryPage() {
         {tab === "master" && <MasterTab onOpen={setProductOpen} />}
         {tab === "suppliers" && <SuppliersTab onOpen={setSupplierOpen} />}
         {tab === "inventory" && <InventoryTab />}
-        {tab === "transfers" && <TransfersTab onOpen={setTransferOpen} onNew={() => setNewTransferOpen(true)} />}
+        {tab === "transfers" && (
+          <TransfersTab onOpen={setTransferOpen} onNew={() => setNewTransferOpen(true)} />
+        )}
         {tab === "kits" && <KitsTab onEdit={setKitEditOpen} onNew={() => setNewKitOpen(true)} />}
         {/* {tab === "activity" && <ActivityTab />} */}
         {tab === "cold-chain" && <ColdChainTab onOpen={setUnitOpen} />}
@@ -195,8 +212,12 @@ function InventoryPage() {
       </main>
 
       {productOpen && <ProductPanel product={productOpen} onClose={() => setProductOpen(null)} />}
-      {supplierOpen && <SupplierPanel supplier={supplierOpen} onClose={() => setSupplierOpen(null)} />}
-      {transferOpen && <TransferPanel transfer={transferOpen} onClose={() => setTransferOpen(null)} />}
+      {supplierOpen && (
+        <SupplierPanel supplier={supplierOpen} onClose={() => setSupplierOpen(null)} />
+      )}
+      {transferOpen && (
+        <TransferPanel transfer={transferOpen} onClose={() => setTransferOpen(null)} />
+      )}
       {kitEditOpen && <KitEditPanel kitId={kitEditOpen} onClose={() => setKitEditOpen(null)} />}
       {unitOpen && <ColdUnitPanel unit={unitOpen} onClose={() => setUnitOpen(null)} />}
       {alertOpen && <InvimaPanel alert={alertOpen} onClose={() => setAlertOpen(null)} />}
@@ -212,7 +233,11 @@ function InventoryPage() {
 // PRIMARY ACTION (context-aware per tab)
 // ============================================================
 function PrimaryAction({
-  tab, onNewProduct, onNewSupplier, onNewTransfer, onNewKit,
+  tab,
+  onNewProduct,
+  onNewSupplier,
+  onNewTransfer,
+  onNewKit,
 }: {
   tab: Tab;
   onNewProduct: () => void;
@@ -225,12 +250,24 @@ function PrimaryAction({
     suppliers: { label: "New supplier", onClick: onNewSupplier },
     transfers: { label: "New transfer", onClick: onNewTransfer },
     kits: { label: "New kit", onClick: onNewKit },
-    inventory: { label: "Adjust stock", onClick: () => runMockAction("Opening adjustment", { success: "Adjustment form ready" }) },
-    activity: { label: "Export feed", onClick: () => runMockAction("Exporting activity", { success: "CSV ready · 248 events" }) },
-    "cold-chain": { label: "Calibrate sensor", onClick: () => runMockAction("Opening sensor calibration", { success: "Sensor list loaded" }) },
-    invima: { label: "Log alert", onClick: () => runMockAction("Logging INVIMA alert", { success: "Draft alert created" }) },
+    inventory: {
+      label: "Adjust stock",
+      onClick: () => runMockAction("Opening adjustment", { success: "Adjustment form ready" }),
+    },
+    activity: {
+      label: "Export feed",
+      onClick: () => runMockAction("Exporting activity", { success: "CSV ready · 248 events" }),
+    },
+    "cold-chain": {
+      label: "Calibrate sensor",
+      onClick: () => runMockAction("Opening sensor calibration", { success: "Sensor list loaded" }),
+    },
+    invima: {
+      label: "Log alert",
+      onClick: () => runMockAction("Logging INVIMA alert", { success: "Draft alert created" }),
+    },
   };
-  const cur = map[tab] ?? { label: "New", onClick: () => { } };
+  const cur = map[tab] ?? { label: "New", onClick: () => {} };
   return (
     <button
       onClick={cur.onClick}
@@ -245,13 +282,19 @@ function PrimaryAction({
 // SHARED PRIMITIVES
 // ============================================================
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("bg-card border border-border rounded-xl", className)}>{children}</div>
-  );
+  return <div className={cn("bg-card border border-border rounded-xl", className)}>{children}</div>;
 }
 
-function Kpi({ label, value, hint, tone = "default", icon: Icon }: {
-  label: string; value: string | number; hint?: string;
+function Kpi({
+  label,
+  value,
+  hint,
+  tone = "default",
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
   tone?: "default" | "warning" | "critical" | "success";
   icon?: typeof Boxes;
 }) {
@@ -259,13 +302,19 @@ function Kpi({ label, value, hint, tone = "default", icon: Icon }: {
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">{label}</p>
-          <p className={cn(
-            "text-[22px] font-semibold tracking-tight mt-1 tabular-nums",
-            tone === "warning" && "text-warning",
-            tone === "critical" && "text-critical",
-            tone === "success" && "text-success",
-          )}>{value}</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+            {label}
+          </p>
+          <p
+            className={cn(
+              "text-[22px] font-semibold tracking-tight mt-1 tabular-nums",
+              tone === "warning" && "text-warning",
+              tone === "critical" && "text-critical",
+              tone === "success" && "text-success",
+            )}
+          >
+            {value}
+          </p>
           {hint && <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p>}
         </div>
         {Icon && (
@@ -278,7 +327,15 @@ function Kpi({ label, value, hint, tone = "default", icon: Icon }: {
   );
 }
 
-function SectionHeader({ title, hint, action }: { title: string; hint?: string; action?: React.ReactNode }) {
+function SectionHeader({
+  title,
+  hint,
+  action,
+}: {
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="flex items-end justify-between gap-3 mb-3">
       <div>
@@ -290,23 +347,39 @@ function SectionHeader({ title, hint, action }: { title: string; hint?: string; 
   );
 }
 
-function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "primary" | "success" | "warning" | "critical" | "muted" }) {
+function Pill({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "primary" | "success" | "warning" | "critical" | "muted";
+}) {
   return (
-    <span className={cn(
-      "inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap",
-      tone === "default" && "bg-secondary text-foreground/80 border-border",
-      tone === "primary" && "bg-accent text-primary border-accent",
-      tone === "success" && "bg-success/10 text-success border-success/20",
-      tone === "warning" && "bg-warning/10 text-warning border-warning/20",
-      tone === "critical" && "bg-critical/10 text-critical border-critical/20",
-      tone === "muted" && "bg-secondary text-muted-foreground border-border",
-    )}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 text-[10.5px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap",
+        tone === "default" && "bg-secondary text-foreground/80 border-border",
+        tone === "primary" && "bg-accent text-primary border-accent",
+        tone === "success" && "bg-success/10 text-success border-success/20",
+        tone === "warning" && "bg-warning/10 text-warning border-warning/20",
+        tone === "critical" && "bg-critical/10 text-critical border-critical/20",
+        tone === "muted" && "bg-secondary text-muted-foreground border-border",
+      )}
+    >
       {children}
     </span>
   );
 }
 
-function ToolbarSearch({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+function ToolbarSearch({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
   return (
     <div className="relative flex-1 max-w-md">
       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
@@ -320,12 +393,27 @@ function ToolbarSearch({ value, onChange, placeholder }: { value: string; onChan
   );
 }
 
-function FilterBtn({ children, active, onClick }: { children: React.ReactNode; active?: boolean; onClick?: () => void }) {
+function FilterBtn({
+  children,
+  active,
+  onClick,
+}: {
+  children: React.ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
-    <button onClick={onClick} className={cn(
-      "inline-flex items-center gap-1 h-8 px-2.5 text-[11.5px] font-medium rounded-md border transition-colors",
-      active ? "bg-accent text-primary border-accent" : "bg-card text-foreground/70 border-border hover:bg-secondary",
-    )}>{children}</button>
+    <button
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1 h-8 px-2.5 text-[11.5px] font-medium rounded-md border transition-colors",
+        active
+          ? "bg-accent text-primary border-accent"
+          : "bg-card text-foreground/70 border-border hover:bg-secondary",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -333,7 +421,6 @@ function FilterBtn({ children, active, onClick }: { children: React.ReactNode; a
 // 1. MASTER TAB
 // ============================================================
 function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
-
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
 
@@ -350,7 +437,8 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
     const [productsRes, lotsRes] = await Promise.all([
       supabase
         .from("products")
-        .select(`
+        .select(
+          `
         id,
         clinic_id,
         name,
@@ -376,12 +464,11 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
         is_reusable,
         is_sterile,
         product_attributes
-      `)
+      `,
+        )
         .order("name"),
 
-      supabase
-        .from("inventory_lots")
-        .select(`
+      supabase.from("inventory_lots").select(`
         id,
         product_id,
         quantity_available,
@@ -406,19 +493,15 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
     const lotsRows = lotsRes.data ?? [];
 
     const mappedProducts: MasterProduct[] = productsRows.map((p: any) => {
-      const productLots = lotsRows.filter(
-        (lot: any) => lot.product_id === p.id,
-      );
+      const productLots = lotsRows.filter((lot: any) => lot.product_id === p.id);
 
       const stock = productLots.reduce(
-        (total: number, lot: any) =>
-          total + Number(lot.quantity_available ?? 0),
+        (total: number, lot: any) => total + Number(lot.quantity_available ?? 0),
         0,
       );
 
       const reserved = productLots.reduce(
-        (total: number, lot: any) =>
-          total + Number(lot.quantity_reserved ?? 0),
+        (total: number, lot: any) => total + Number(lot.quantity_reserved ?? 0),
         0,
       );
 
@@ -436,7 +519,9 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
         active: p.active ?? true,
         invima: p.invima_registration ?? "",
         coldChain:
-          String(p.storage_condition ?? "").toLowerCase().includes("cold") ||
+          String(p.storage_condition ?? "")
+            .toLowerCase()
+            .includes("cold") ||
           p.temperature_min !== null ||
           p.temperature_max !== null,
         controlled: Boolean(p.requires_prescription ?? false),
@@ -469,13 +554,8 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
   }
 
   const categories = useMemo(
-    () => [
-      "all",
-      ...Array.from(
-        new Set(products.map((p) => p.category))
-      ),
-    ],
-    [products]
+    () => ["all", ...Array.from(new Set(products.map((p) => p.category)))],
+    [products],
   );
 
   const filtered = products.filter(
@@ -483,20 +563,15 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
       (cat === "all" || p.category === cat) &&
       (!q ||
         p.name.toLowerCase().includes(q.toLowerCase()) ||
-        p.code.toLowerCase().includes(q.toLowerCase()))
+        p.code.toLowerCase().includes(q.toLowerCase())),
   );
 
   if (loading) {
-    return (
-      <div className="p-6 text-sm text-muted-foreground">
-        Loading products...
-      </div>
-    );
+    return <div className="p-6 text-sm text-muted-foreground">Loading products...</div>;
   }
 
   return (
     <div className="space-y-6">
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi
           label="Registered products"
@@ -529,9 +604,7 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
       </div>
 
       <Card>
-
         <div className="p-4 flex flex-wrap items-center gap-2 border-b border-border">
-
           <ToolbarSearch
             value={q}
             onChange={setQ}
@@ -540,11 +613,7 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
 
           <div className="flex items-center gap-1.5 flex-wrap">
             {categories.map((c) => (
-              <FilterBtn
-                key={c}
-                active={cat === c}
-                onClick={() => setCat(c)}
-              >
+              <FilterBtn key={c} active={cat === c} onClick={() => setCat(c)}>
                 {c === "all" ? "All categories" : c}
               </FilterBtn>
             ))}
@@ -552,9 +621,7 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
         </div>
 
         <div className="overflow-x-auto">
-
           <table className="w-full text-[12px]">
-
             <thead className="bg-secondary/60 text-muted-foreground">
               <tr className="text-left">
                 <Th>Product</Th>
@@ -576,35 +643,25 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
                 >
                   <Td>
                     <div className="flex items-center gap-2.5">
-
                       <div className="size-8 rounded-md bg-accent text-primary flex items-center justify-center shrink-0">
                         <PillIcon className="size-3.5" />
                       </div>
 
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground truncate">
-                          {p.name}
-                        </p>
-
+                        <p className="font-semibold text-foreground truncate">{p.name}</p>
                       </div>
                     </div>
                   </Td>
 
                   <Td>
-                    <Pill tone="muted">
-                      {p.category}
-                    </Pill>
+                    <Pill tone="muted">{p.category}</Pill>
                   </Td>
 
-                  <Td className="text-muted-foreground">
-                    {p.presentation}
-                  </Td>
+                  <Td className="text-muted-foreground">{p.presentation}</Td>
 
                   <Td>
                     <span className="inline-flex items-center gap-1">
-                      {p.coldChain && (
-                        <Snowflake className="size-3 text-primary" />
-                      )}
+                      {p.coldChain && <Snowflake className="size-3 text-primary" />}
 
                       {p.storage}
                     </span>
@@ -616,20 +673,14 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
 
                   <Td>
                     {p.active ? (
-                      <Pill tone="success">
-                        Active
-                      </Pill>
+                      <Pill tone="success">Active</Pill>
                     ) : (
-                      <Pill tone="muted">
-                        Inactive
-                      </Pill>
+                      <Pill tone="muted">Inactive</Pill>
                     )}
 
                     {p.controlled && (
                       <span className="ml-1">
-                        <Pill tone="warning">
-                          Controlled
-                        </Pill>
+                        <Pill tone="warning">Controlled</Pill>
                       </span>
                     )}
                   </Td>
@@ -640,7 +691,6 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
       </Card>
@@ -649,15 +699,19 @@ function MasterTab({ onOpen }: { onOpen: (p: MasterProduct) => void }) {
 }
 
 function Th({ children, className }: { children?: React.ReactNode; className?: string }) {
-  return <th className={cn("px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wider", className)}>{children}</th>;
+  return (
+    <th
+      className={cn("px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wider", className)}
+    >
+      {children}
+    </th>
+  );
 }
 function Td({ children, className }: { children?: React.ReactNode; className?: string }) {
   return <td className={cn("px-4 py-3 align-middle", className)}>{children}</td>;
 }
 
-function normalizeProductCategory(
-  value: string | null | undefined,
-): MasterProduct["category"] {
+function normalizeProductCategory(value: string | null | undefined): MasterProduct["category"] {
   const normalized = String(value ?? "").trim();
 
   const allowed: MasterProduct["category"][] = [
@@ -701,7 +755,7 @@ function Stat({
           "text-[13px] font-semibold tabular-nums",
           tone === "warning" && "text-warning",
           tone === "success" && "text-success",
-          tone === "critical" && "text-critical"
+          tone === "critical" && "text-critical",
         )}
       >
         {value}
@@ -717,10 +771,7 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
 
   useEffect(() => {
     const loadSuppliers = async () => {
-      const { data, error } = await supabase
-        .from("suppliers")
-        .select("*")
-        .order("name");
+      const { data, error } = await supabase.from("suppliers").select("*").order("name");
 
       console.log("SUPPLIERS DATA", data);
       console.log("SUPPLIERS ERROR", error);
@@ -755,10 +806,7 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
   }, []);
 
   const filtered = suppliers.filter(
-    (s) =>
-      !q ||
-      s.name.toLowerCase().includes(q.toLowerCase()) ||
-      s.nit.includes(q)
+    (s) => !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.nit.includes(q),
   );
 
   return (
@@ -786,14 +834,13 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
 
         <Kpi
           label="Avg performance"
-          value={`${suppliers.length
-            ? Math.round(
-              (suppliers.reduce((s, x) => s + x.performance, 0) /
-                suppliers.length) *
-              100
-            )
-            : 0
-            }%`}
+          value={`${
+            suppliers.length
+              ? Math.round(
+                  (suppliers.reduce((s, x) => s + x.performance, 0) / suppliers.length) * 100,
+                )
+              : 0
+          }%`}
           hint="On-time & quality"
           icon={TrendingUp}
           tone="success"
@@ -802,17 +849,11 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
 
       <Card>
         <div className="p-4 border-b border-border">
-          <ToolbarSearch
-            value={q}
-            onChange={setQ}
-            placeholder="Search supplier or NIT…"
-          />
+          <ToolbarSearch value={q} onChange={setQ} placeholder="Search supplier or NIT…" />
         </div>
 
         {loading ? (
-          <div className="p-6 text-sm text-muted-foreground">
-            Loading suppliers...
-          </div>
+          <div className="p-6 text-sm text-muted-foreground">Loading suppliers...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 p-4">
             {filtered.map((s) => (
@@ -828,13 +869,9 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
                     </div>
 
                     <div>
-                      <p className="text-[13px] font-semibold tracking-tight">
-                        {s.name}
-                      </p>
+                      <p className="text-[13px] font-semibold tracking-tight">{s.name}</p>
 
-                      <p className="text-[10.5px] font-mono text-muted-foreground">
-                        {s.nit}
-                      </p>
+                      <p className="text-[10.5px] font-mono text-muted-foreground">{s.nit}</p>
                     </div>
                   </div>
 
@@ -853,9 +890,7 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
                   <Stat
                     label="Performance"
                     value={`${Math.round(s.performance * 100)}%`}
-                    tone={
-                      s.performance < 0.85 ? "warning" : "success"
-                    }
+                    tone={s.performance < 0.85 ? "warning" : "success"}
                   />
                 </div>
 
@@ -864,9 +899,7 @@ function SuppliersTab({ onOpen }: { onOpen: (s: Supplier) => void }) {
                 </p>
 
                 {s.notes && (
-                  <p className="text-[11px] text-warning mt-2 line-clamp-2">
-                    ⚠ {s.notes}
-                  </p>
+                  <p className="text-[11px] text-warning mt-2 line-clamp-2">⚠ {s.notes}</p>
                 )}
               </button>
             ))}
@@ -932,8 +965,7 @@ type InventoryAdjustmentType =
 
 function InventoryTab() {
   const [q, setQ] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState<InventoryLotStatusLocal | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<InventoryLotStatusLocal | "all">("all");
 
   const [adjLot, setAdjLot] = useState<string | null>(null);
   const [newLotOpen, setNewLotOpen] = useState(false);
@@ -950,7 +982,8 @@ function InventoryTab() {
 
     const { data, error } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         product_id,
@@ -984,7 +1017,8 @@ function InventoryTab() {
           id,
           name
         )
-      `)
+      `,
+      )
       .order("expiration_date", { ascending: true });
 
     console.log("LOTS DATA", data);
@@ -1007,16 +1041,12 @@ function InventoryTab() {
       const supplier = normalizeInventoryRelation<any>(lot.suppliers);
       const location = normalizeInventoryRelation<any>(lot.locations);
 
-      const expiryDate = lot.expiration_date
-        ? new Date(lot.expiration_date)
-        : null;
+      const expiryDate = lot.expiration_date ? new Date(lot.expiration_date) : null;
 
       const now = new Date();
 
       const daysToExpiry = expiryDate
-        ? Math.ceil(
-            (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-          )
+        ? Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
 
       return {
@@ -1045,8 +1075,7 @@ function InventoryTab() {
 
         unit: product?.unit_of_measure ?? "units",
         tempRequirement: product?.storage_condition ?? "N/A",
-        coldChain:
-          product?.storage_condition?.toLowerCase().includes("cold") ?? false,
+        coldChain: product?.storage_condition?.toLowerCase().includes("cold") ?? false,
         status: normalizeInventoryLotStatus(lot.status),
       };
     });
@@ -1065,10 +1094,7 @@ function InventoryTab() {
         lot.manufacturerLot.toLowerCase().includes(q.toLowerCase())),
   );
 
-  const totalValue = lots.reduce(
-    (sum, lot) => sum + lot.cost * lot.total,
-    0,
-  );
+  const totalValue = lots.reduce((sum, lot) => sum + lot.cost * lot.total, 0);
 
   const reserved = lots.reduce((sum, lot) => sum + lot.reserved, 0);
 
@@ -1076,18 +1102,12 @@ function InventoryTab() {
     (lot) => lot.status === "quarantined" || lot.status === "blocked",
   ).length;
 
-  const expiringSoon = lots.filter(
-    (lot) => lot.daysToExpiry > 0 && lot.daysToExpiry <= 60,
-  ).length;
+  const expiringSoon = lots.filter((lot) => lot.daysToExpiry > 0 && lot.daysToExpiry <= 60).length;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi
-          label="Inventory value"
-          value={`$${(totalValue / 1000).toFixed(1)}k`}
-          icon={Layers}
-        />
+        <Kpi label="Inventory value" value={`$${(totalValue / 1000).toFixed(1)}k`} icon={Layers} />
 
         <Kpi
           label="Units reserved"
@@ -1136,9 +1156,7 @@ function InventoryTab() {
               <FilterBtn
                 key={status}
                 active={statusFilter === status}
-                onClick={() =>
-                  setStatusFilter(status as InventoryLotStatusLocal | "all")
-                }
+                onClick={() => setStatusFilter(status as InventoryLotStatusLocal | "all")}
               >
                 {status[0].toUpperCase() + status.slice(1)}
               </FilterBtn>
@@ -1172,10 +1190,7 @@ function InventoryTab() {
             <tbody>
               {loadingLots && (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="py-8 text-center text-muted-foreground"
-                  >
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
                     Loading lots...
                   </td>
                 </tr>
@@ -1183,10 +1198,7 @@ function InventoryTab() {
 
               {!loadingLots && filtered.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="py-8 text-center text-muted-foreground"
-                  >
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
                     No inventory lots found
                   </td>
                 </tr>
@@ -1201,9 +1213,7 @@ function InventoryTab() {
                     <Td>
                       <div>
                         <p className="font-mono text-[11px] font-semibold text-primary">
-                          {lot.manufacturerLot !== "—"
-                            ? lot.manufacturerLot
-                            : lot.internalLotCode}
+                          {lot.manufacturerLot !== "—" ? lot.manufacturerLot : lot.internalLotCode}
                         </p>
 
                         <p className="text-[10.5px] text-muted-foreground">
@@ -1214,13 +1224,9 @@ function InventoryTab() {
 
                     <Td>
                       <div>
-                        <p className="font-medium text-foreground">
-                          {lot.product}
-                        </p>
+                        <p className="font-medium text-foreground">{lot.product}</p>
 
-                        <p className="text-[10.5px] text-muted-foreground">
-                          {lot.tempRequirement}
-                        </p>
+                        <p className="text-[10.5px] text-muted-foreground">{lot.tempRequirement}</p>
                       </div>
                     </Td>
 
@@ -1251,9 +1257,7 @@ function InventoryTab() {
                           <p
                             className={cn(
                               "text-[10.5px]",
-                              lot.daysToExpiry <= 60
-                                ? "text-warning"
-                                : "text-muted-foreground",
+                              lot.daysToExpiry <= 60 ? "text-warning" : "text-muted-foreground",
                             )}
                           >
                             {lot.daysToExpiry} days
@@ -1323,8 +1327,7 @@ function AdjustmentPanel({
   const [saving, setSaving] = useState(false);
 
   const [lot, setLot] = useState<any | null>(null);
-  const [adjustmentType, setAdjustmentType] =
-    useState<InventoryAdjustmentType>("ADD_STOCK");
+  const [adjustmentType, setAdjustmentType] = useState<InventoryAdjustmentType>("ADD_STOCK");
   const [quantity, setQuantity] = useState("");
   const [reason, setReason] = useState("");
 
@@ -1337,7 +1340,8 @@ function AdjustmentPanel({
 
     const { data, error } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         product_id,
@@ -1362,7 +1366,8 @@ function AdjustmentPanel({
           id,
           name
         )
-      `)
+      `,
+      )
       .eq("id", lotId)
       .single();
 
@@ -1412,7 +1417,7 @@ function AdjustmentPanel({
     const currentInitial = Number(lot.quantity_initial ?? 0);
 
     let nextAvailable = currentAvailable;
-    let nextReserved = currentReserved;
+    const nextReserved = currentReserved;
     let nextConsumed = currentConsumed;
     let nextInitial = currentInitial;
     let nextStatus = String(lot.status ?? "available").toLowerCase();
@@ -1510,25 +1515,23 @@ function AdjustmentPanel({
       return;
     }
 
-    const { error: movementError } = await supabase
-      .from("inventory_movements")
-      .insert({
-        id: crypto.randomUUID(),
-        clinic_id: lot.clinic_id,
-        lot_id: lot.id,
-        inventory_reservation_id: null,
-        movement_type: movementType,
-        source_location_id: lot.location_id,
-        destination_location_id: lot.location_id,
-        quantity: movementQuantity,
-        related_case_id: null,
-        related_patient_id: null,
-        related_procedure_id: null,
-        related_prescription_item_id: null,
-        performed_by: null,
-        reason: reason.trim(),
-        created_at: now,
-      });
+    const { error: movementError } = await supabase.from("inventory_movements").insert({
+      id: crypto.randomUUID(),
+      clinic_id: lot.clinic_id,
+      lot_id: lot.id,
+      inventory_reservation_id: null,
+      movement_type: movementType,
+      source_location_id: lot.location_id,
+      destination_location_id: lot.location_id,
+      quantity: movementQuantity,
+      related_case_id: null,
+      related_patient_id: null,
+      related_procedure_id: null,
+      related_prescription_item_id: null,
+      performed_by: null,
+      reason: reason.trim(),
+      created_at: now,
+    });
 
     if (movementError) {
       console.error("Inventory adjustment movement was not created:", movementError);
@@ -1571,39 +1574,29 @@ function AdjustmentPanel({
       {loading ? (
         <div className="text-[12px] text-muted-foreground">Loading lot...</div>
       ) : !lot ? (
-        <div className="text-[12px] text-muted-foreground">
-          Lot not found.
-        </div>
+        <div className="text-[12px] text-muted-foreground">Lot not found.</div>
       ) : (
         <div className="space-y-5">
           <section className="rounded-xl border border-border bg-secondary/30 p-4">
             <div className="grid grid-cols-2 gap-3 text-[12px]">
               <Field label="Product">{lot.products?.name ?? "-"}</Field>
-              <Field label="Lot">
-                {lot.manufacturer_lot ?? lot.internal_lot_code ?? lot.id}
-              </Field>
+              <Field label="Lot">{lot.manufacturer_lot ?? lot.internal_lot_code ?? lot.id}</Field>
               <Field label="Warehouse">{lot.locations?.name ?? "-"}</Field>
               <Field label="Status">
-                <InventoryLotStatusBadge
-                  status={normalizeInventoryLotStatus(lot.status)}
-                />
+                <InventoryLotStatusBadge status={normalizeInventoryLotStatus(lot.status)} />
               </Field>
               <Field label="Available">
-                {Number(lot.quantity_available ?? 0)}{" "}
-                {lot.products?.unit_of_measure ?? "units"}
+                {Number(lot.quantity_available ?? 0)} {lot.products?.unit_of_measure ?? "units"}
               </Field>
               <Field label="Reserved">
-                {Number(lot.quantity_reserved ?? 0)}{" "}
-                {lot.products?.unit_of_measure ?? "units"}
+                {Number(lot.quantity_reserved ?? 0)} {lot.products?.unit_of_measure ?? "units"}
               </Field>
             </div>
           </section>
 
           <section className="rounded-xl border border-border bg-card p-4 space-y-4">
             <label className="space-y-1.5 block">
-              <span className="text-[11px] font-medium text-muted-foreground">
-                Adjustment type
-              </span>
+              <span className="text-[11px] font-medium text-muted-foreground">Adjustment type</span>
 
               <select
                 value={adjustmentType}
@@ -1675,9 +1668,7 @@ function NewInventoryLotPanel({
 
   const [quantityInitial, setQuantityInitial] = useState("");
   const [unitCost, setUnitCost] = useState("");
-  const [receivedAt, setReceivedAt] = useState(
-    toDatetimeLocalInputValue(new Date()),
-  );
+  const [receivedAt, setReceivedAt] = useState(toDatetimeLocalInputValue(new Date()));
 
   useEffect(() => {
     loadFormData();
@@ -1689,7 +1680,8 @@ function NewInventoryLotPanel({
     const [productsRes, suppliersRes, locationsRes] = await Promise.all([
       supabase
         .from("products")
-        .select(`
+        .select(
+          `
           id,
           clinic_id,
           name,
@@ -1697,27 +1689,32 @@ function NewInventoryLotPanel({
           presentation,
           unit_of_measure,
           active
-        `)
+        `,
+        )
         .eq("active", true)
         .order("name", { ascending: true }),
 
       supabase
         .from("suppliers")
-        .select(`
+        .select(
+          `
           id,
           name
-        `)
+        `,
+        )
         .order("name", { ascending: true }),
 
       supabase
         .from("locations")
-        .select(`
+        .select(
+          `
           id,
           clinic_id,
           name,
           type,
           active
-        `)
+        `,
+        )
         .eq("active", true)
         .order("name", { ascending: true }),
     ]);
@@ -1809,8 +1806,7 @@ function NewInventoryLotPanel({
     const lotId = crypto.randomUUID();
 
     const finalInternalLotCode =
-      internalLotCode.trim() ||
-      generateInternalLotCode(product?.name ?? "LOT");
+      internalLotCode.trim() || generateInternalLotCode(product?.name ?? "LOT");
 
     const payload = {
       id: lotId,
@@ -1828,14 +1824,10 @@ function NewInventoryLotPanel({
       quantity_reserved: 0,
       quantity_consumed: 0,
       unit_cost: unitCost ? Number(unitCost) : null,
-      received_at: receivedAt
-        ? datetimeLocalToTimestampWithoutTimezone(receivedAt)
-        : now,
+      received_at: receivedAt ? datetimeLocalToTimestampWithoutTimezone(receivedAt) : now,
     };
 
-    const { error: lotError } = await supabase
-      .from("inventory_lots")
-      .insert(payload);
+    const { error: lotError } = await supabase.from("inventory_lots").insert(payload);
 
     console.log("NEW INVENTORY LOT PAYLOAD", payload);
     console.log("NEW INVENTORY LOT ERROR", lotError);
@@ -1880,8 +1872,7 @@ function NewInventoryLotPanel({
       console.error("Initial movement was not created:", movementError);
 
       runMockAction("Creating inventory lot", {
-        success:
-          "Lote creado. Advertencia: no se pudo crear el movimiento inicial.",
+        success: "Lote creado. Advertencia: no se pudo crear el movimiento inicial.",
       });
 
       setSaving(false);
@@ -1937,16 +1928,13 @@ function NewInventoryLotPanel({
               <h3 className="text-[13px] font-semibold">Product and location</h3>
 
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                El producto viene de la tabla products. El lote se crea en
-                inventory_lots.
+                El producto viene de la tabla products. El lote se crea en inventory_lots.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <label className="space-y-1.5 block col-span-2">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Product
-                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Product</span>
 
                 <select
                   value={productId}
@@ -1959,18 +1947,14 @@ function NewInventoryLotPanel({
                     <option key={product.id} value={product.id}>
                       {product.name}
                       {product.presentation ? ` · ${product.presentation}` : ""}
-                      {product.unit_of_measure
-                        ? ` · ${product.unit_of_measure}`
-                        : ""}
+                      {product.unit_of_measure ? ` · ${product.unit_of_measure}` : ""}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label className="space-y-1.5 block">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Supplier
-                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Supplier</span>
 
                 <select
                   value={supplierId}
@@ -1988,9 +1972,7 @@ function NewInventoryLotPanel({
               </label>
 
               <label className="space-y-1.5 block">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Warehouse
-                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Warehouse</span>
 
                 <select
                   value={locationId}
@@ -2077,9 +2059,7 @@ function NewInventoryLotPanel({
               />
 
               <label className="space-y-1.5 block col-span-2">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Received at
-                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Received at</span>
 
                 <input
                   type="datetime-local"
@@ -2101,9 +2081,7 @@ function NewInventoryLotPanel({
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-[12px]">
-              <Field label="Product">
-                {product?.name ?? "No product selected"}
-              </Field>
+              <Field label="Product">{product?.name ?? "No product selected"}</Field>
 
               <Field label="Initial / available">
                 {Number(quantityInitial || 0)} {unit}
@@ -2117,9 +2095,7 @@ function NewInventoryLotPanel({
                 <InventoryLotStatusBadge status="available" />
               </Field>
 
-              <Field label="Internal lot">
-                {internalLotCode.trim() || "Auto generated"}
-              </Field>
+              <Field label="Internal lot">{internalLotCode.trim() || "Auto generated"}</Field>
             </div>
           </section>
         </div>
@@ -2131,19 +2107,13 @@ function NewInventoryLotPanel({
 // ============================================================
 // INVENTORY LOT STATUS BADGE
 // ============================================================
-function normalizeInventoryRelation<T>(
-  value: T | T[] | null | undefined,
-): T | null {
+function normalizeInventoryRelation<T>(value: T | T[] | null | undefined): T | null {
   if (!value) return null;
   if (Array.isArray(value)) return value[0] ?? null;
   return value;
 }
 
-function InventoryLotStatusBadge({
-  status,
-}: {
-  status: InventoryLotStatusLocal | string;
-}) {
+function InventoryLotStatusBadge({ status }: { status: InventoryLotStatusLocal | string }) {
   const normalized = normalizeInventoryLotStatus(status);
 
   const map: Record<
@@ -2197,10 +2167,10 @@ function InventoryLotStatusBadge({
   return <Pill tone={map[normalized].tone}>{map[normalized].label}</Pill>;
 }
 
-function normalizeInventoryLotStatus(
-  status: string | null | undefined,
-): InventoryLotStatusLocal {
-  const normalized = String(status ?? "available").trim().toLowerCase();
+function normalizeInventoryLotStatus(status: string | null | undefined): InventoryLotStatusLocal {
+  const normalized = String(status ?? "available")
+    .trim()
+    .toLowerCase();
 
   if (normalized === "reserved") return "reserved";
   if (normalized === "quarantined") return "quarantined";
@@ -2249,7 +2219,6 @@ function datetimeLocalToTimestampWithoutTimezone(value: string) {
   return value.replace("T", " ") + ":00";
 }
 
-
 // ============================================================
 // 4. TRANSFERS TAB
 // ============================================================
@@ -2268,13 +2237,7 @@ type ClinicLocationOption = {
   legal_name: string | null;
 };
 
-function TransfersTab({
-  onOpen,
-  onNew,
-}: {
-  onOpen: (t: Transfer) => void;
-  onNew: () => void;
-}) {
+function TransfersTab({ onOpen, onNew }: { onOpen: (t: Transfer) => void; onNew: () => void }) {
   const [filter, setFilter] = useState<TransferStatus | "all">("all");
 
   const [transfers, setTransfers] = useState<Transfer[]>([]);
@@ -2291,7 +2254,8 @@ function TransfersTab({
 
     const { data, error } = await supabase
       .from("inventory_movements")
-      .select(`
+      .select(
+        `
         id,
         created_at,
         movement_type,
@@ -2318,7 +2282,8 @@ function TransfersTab({
           id,
           name
         )
-      `)
+      `,
+      )
       .order("created_at", {
         ascending: false,
       });
@@ -2409,10 +2374,7 @@ function TransfersTab({
           {
             product: m.inventory_lots?.products?.name ?? "Unknown product",
 
-            lot:
-              m.inventory_lots?.internal_lot_code ??
-              m.inventory_lots?.id ??
-              "-",
+            lot: m.inventory_lots?.internal_lot_code ?? m.inventory_lots?.id ?? "-",
 
             qty: Number(m.quantity ?? 0),
 
@@ -2429,9 +2391,7 @@ function TransfersTab({
     setLoading(false);
   }
 
-  const filtered = transfers.filter(
-    (t) => filter === "all" || t.status === filter,
-  );
+  const filtered = transfers.filter((t) => filter === "all" || t.status === filter);
 
   return (
     <div className="space-y-6">
@@ -2473,24 +2433,13 @@ function TransfersTab({
       <Card>
         <div className="p-4 flex flex-wrap items-center justify-between gap-2 border-b border-border">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {(
-              [
-                "all",
-                "pending",
-                "approved",
-                "in-transit",
-                "received",
-                "cancelled",
-              ] as const
-            ).map((s) => (
-              <FilterBtn
-                key={s}
-                active={filter === s}
-                onClick={() => setFilter(s)}
-              >
-                {s[0].toUpperCase() + s.slice(1)}
-              </FilterBtn>
-            ))}
+            {(["all", "pending", "approved", "in-transit", "received", "cancelled"] as const).map(
+              (s) => (
+                <FilterBtn key={s} active={filter === s} onClick={() => setFilter(s)}>
+                  {s[0].toUpperCase() + s.slice(1)}
+                </FilterBtn>
+              ),
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -2514,9 +2463,7 @@ function TransfersTab({
 
         <div className="divide-y divide-border">
           {loading && (
-            <div className="p-6 text-[12px] text-muted-foreground">
-              Loading movements...
-            </div>
+            <div className="p-6 text-[12px] text-muted-foreground">Loading movements...</div>
           )}
 
           {!loading && filtered.length === 0 && (
@@ -2537,21 +2484,15 @@ function TransfersTab({
                     {t.id.slice(0, 8)}
                   </p>
 
-                  <p className="text-[10.5px] text-muted-foreground">
-                    {t.created}
-                  </p>
+                  <p className="text-[10.5px] text-muted-foreground">{t.created}</p>
                 </div>
 
                 <div className="col-span-4 flex items-center gap-2 text-[12px]">
-                  <span className="font-medium text-foreground truncate">
-                    {t.from}
-                  </span>
+                  <span className="font-medium text-foreground truncate">{t.from}</span>
 
                   <ArrowRight className="size-3 text-muted-foreground shrink-0" />
 
-                  <span className="font-medium text-foreground truncate">
-                    {t.to}
-                  </span>
+                  <span className="font-medium text-foreground truncate">{t.to}</span>
                 </div>
 
                 <div className="col-span-3 text-[11.5px] text-muted-foreground truncate">
@@ -2585,11 +2526,7 @@ function TransfersTab({
   );
 }
 
-function TransferStatusBadge({
-  status,
-}: {
-  status: TransferStatus;
-}) {
+function TransferStatusBadge({ status }: { status: TransferStatus }) {
   const map: Record<
     TransferStatus,
     {
@@ -2626,13 +2563,7 @@ function TransferStatusBadge({
   return <Pill tone={map[status].tone}>{map[status].label}</Pill>;
 }
 
-function NewLocationPanel({
-  onClose,
-  onCreated,
-}: {
-  onClose: () => void;
-  onCreated: () => void;
-}) {
+function NewLocationPanel({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [clinics, setClinics] = useState<ClinicLocationOption[]>([]);
   const [locations, setLocations] = useState<LocationRow[]>([]);
 
@@ -2654,21 +2585,20 @@ function NewLocationPanel({
 
     const [{ data: clinicRows, error: clinicError }, { data: locationRows, error: locationError }] =
       await Promise.all([
-        supabase
-          .from("clinics")
-          .select("id, legal_name")
-          .order("legal_name", { ascending: true }),
+        supabase.from("clinics").select("id, legal_name").order("legal_name", { ascending: true }),
 
         supabase
           .from("locations")
-          .select(`
+          .select(
+            `
             id,
             clinic_id,
             parent_location_id,
             name,
             type,
             active
-          `)
+          `,
+          )
           .eq("active", true)
           .order("name", { ascending: true }),
       ]);
@@ -2723,10 +2653,7 @@ function NewLocationPanel({
     if (error) {
       console.error("Error creating location:", error);
 
-      notify(
-        "Error",
-        error.message || "No se pudo crear la bodega.",
-      );
+      notify("Error", error.message || "No se pudo crear la bodega.");
 
       setCreating(false);
       return;
@@ -2770,16 +2697,12 @@ function NewLocationPanel({
       }
     >
       {loading ? (
-        <div className="p-4 text-[12px] text-muted-foreground">
-          Loading form data...
-        </div>
+        <div className="p-4 text-[12px] text-muted-foreground">Loading form data...</div>
       ) : (
         <div className="space-y-5">
           <section className="rounded-xl border border-border bg-card p-4 space-y-4">
             <div>
-              <h3 className="text-[13px] font-semibold">
-                Warehouse information
-              </h3>
+              <h3 className="text-[13px] font-semibold">Warehouse information</h3>
 
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 Esta ubicación quedará disponible como origen o destino en las transferencias.
@@ -2984,26 +2907,12 @@ type ProcedureKitOrderItemLotDb = {
   } | null;
 };
 
-type KitStatusTone =
-  | "default"
-  | "primary"
-  | "success"
-  | "warning"
-  | "critical"
-  | "muted";
+type KitStatusTone = "default" | "primary" | "success" | "warning" | "critical" | "muted";
 
-function KitsTab({
-  onEdit,
-  onNew,
-}: {
-  onEdit: (id: string) => void;
-  onNew: () => void;
-}) {
+function KitsTab({ onEdit, onNew }: { onEdit: (id: string) => void; onNew: () => void }) {
   const [kits, setKits] = useState<ProcedureKitDb[]>([]);
   const [orders, setOrders] = useState<ProcedureKitOrderDb[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<ProcedureKitOrderDb | null>(
-    null,
-  );
+  const [selectedOrder, setSelectedOrder] = useState<ProcedureKitOrderDb | null>(null);
 
   const [q, setQ] = useState("");
   const [orderFilter, setOrderFilter] = useState<string>("all");
@@ -3011,9 +2920,7 @@ function KitsTab({
   const [workingId, setWorkingId] = useState<string | null>(null);
 
   const [usageByLotId, setUsageByLotId] = useState<Record<string, string>>({});
-  const [returnNotesByItemId, setReturnNotesByItemId] = useState<
-    Record<string, string>
-  >({});
+  const [returnNotesByItemId, setReturnNotesByItemId] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadKitsData();
@@ -3037,7 +2944,8 @@ function KitsTab({
   async function loadKitTemplates() {
     const { data, error } = await supabase
       .from("procedure_kits")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         name,
@@ -3059,7 +2967,8 @@ function KitsTab({
             category
           )
         )
-      `)
+      `,
+      )
       .order("name", { ascending: true });
 
     if (error) {
@@ -3083,7 +2992,8 @@ function KitsTab({
   async function loadKitOrders() {
     const { data, error } = await supabase
       .from("procedure_kit_orders")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         kit_id,
@@ -3153,7 +3063,8 @@ function KitsTab({
             )
           )
         )
-      `)
+      `,
+      )
       .order("requested_at", { ascending: false });
 
     if (error) {
@@ -3166,18 +3077,16 @@ function KitsTab({
     const normalized = ((data ?? []) as any[]).map((order) => ({
       ...order,
       procedure_kits: normalizeKitRelation(order.procedure_kits),
-      procedure_kit_order_items: (order.procedure_kit_order_items ?? []).map(
-        (item: any) => ({
-          ...item,
-          products: normalizeKitRelation(item.products),
-          procedure_kit_order_item_lots: (
-            item.procedure_kit_order_item_lots ?? []
-          ).map((lotRow: any) => ({
+      procedure_kit_order_items: (order.procedure_kit_order_items ?? []).map((item: any) => ({
+        ...item,
+        products: normalizeKitRelation(item.products),
+        procedure_kit_order_item_lots: (item.procedure_kit_order_item_lots ?? []).map(
+          (lotRow: any) => ({
             ...lotRow,
             inventory_lots: normalizeKitRelation(lotRow.inventory_lots),
-          })),
-        }),
-      ),
+          }),
+        ),
+      })),
     }));
 
     setOrders(normalized as ProcedureKitOrderDb[]);
@@ -3185,11 +3094,7 @@ function KitsTab({
     setSelectedOrder((current) => {
       if (!current) return null;
 
-      return (
-        (normalized as ProcedureKitOrderDb[]).find(
-          (order) => order.id === current.id,
-        ) ?? null
-      );
+      return (normalized as ProcedureKitOrderDb[]).find((order) => order.id === current.id) ?? null;
     });
   }
 
@@ -3206,23 +3111,21 @@ function KitsTab({
     const now = inventoryTimestampWithoutTimezone(new Date());
     const orderId = crypto.randomUUID();
 
-    const { error: orderError } = await supabase
-      .from("procedure_kit_orders")
-      .insert({
-        id: orderId,
-        clinic_id: kit.clinic_id,
-        kit_id: kit.id,
-        procedure_id: null,
-        procedure_type: kit.procedure_type,
-        clinic_patient_id: null,
-        patient_id: null,
-        status: "DRAFT",
-        requested_by: null,
-        requested_at: now,
-        notes: "Orden creada desde plantilla de kit.",
-        created_at: now,
-        updated_at: now,
-      });
+    const { error: orderError } = await supabase.from("procedure_kit_orders").insert({
+      id: orderId,
+      clinic_id: kit.clinic_id,
+      kit_id: kit.id,
+      procedure_id: null,
+      procedure_type: kit.procedure_type,
+      clinic_patient_id: null,
+      patient_id: null,
+      status: "DRAFT",
+      requested_by: null,
+      requested_at: now,
+      notes: "Orden creada desde plantilla de kit.",
+      created_at: now,
+      updated_at: now,
+    });
 
     if (orderError) {
       console.error("Error creating kit order:", orderError);
@@ -3360,7 +3263,8 @@ function KitsTab({
 
       const { data: lots, error: lotsError } = await supabase
         .from("inventory_lots")
-        .select(`
+        .select(
+          `
           id,
           clinic_id,
           product_id,
@@ -3372,7 +3276,8 @@ function KitsTab({
           quantity_reserved,
           quantity_consumed,
           status
-        `)
+        `,
+        )
         .eq("product_id", item.product_id)
         .gt("quantity_available", 0)
         .not("status", "in", '("expired","blocked","quarantined","destroyed")')
@@ -3497,9 +3402,7 @@ function KitsTab({
       }
     }
 
-    const finalStatus = hasInsufficientStock
-      ? "INSUFFICIENT_STOCK"
-      : "VALIDATED";
+    const finalStatus = hasInsufficientStock ? "INSUFFICIENT_STOCK" : "VALIDATED";
 
     await supabase
       .from("procedure_kit_orders")
@@ -3722,25 +3625,15 @@ function KitsTab({
         if (!lot || !lotRow.lot_id) continue;
 
         const deliveredQty = Number(lotRow.quantity_delivered ?? 0);
-        const usedQty = Math.max(
-          0,
-          Math.min(Number(usageByLotId[lotRow.id] ?? 0), deliveredQty),
-        );
+        const usedQty = Math.max(0, Math.min(Number(usageByLotId[lotRow.id] ?? 0), deliveredQty));
         const returnedQty = Math.max(deliveredQty - usedQty, 0);
 
-        const newReserved = Math.max(
-          Number(lot.quantity_reserved ?? 0) - deliveredQty,
-          0,
-        );
+        const newReserved = Math.max(Number(lot.quantity_reserved ?? 0) - deliveredQty, 0);
         const newConsumed = Number(lot.quantity_consumed ?? 0) + usedQty;
         const newAvailable = Number(lot.quantity_available ?? 0) + returnedQty;
 
         const newLotStatus =
-          newAvailable > 0
-            ? "available"
-            : newReserved > 0
-              ? "reserved"
-              : "consumed";
+          newAvailable > 0 ? "available" : newReserved > 0 ? "reserved" : "consumed";
 
         const { error: lotError } = await supabase
           .from("inventory_lots")
@@ -3806,8 +3699,7 @@ function KitsTab({
             source_location_id: null,
             destination_location_id: lot.location_id,
             reason:
-              returnNotesByItemId[item.id] ||
-              "Devolución de insumo no usado en procedimiento.",
+              returnNotesByItemId[item.id] || "Devolución de insumo no usado en procedimiento.",
             created_at: now,
           });
         }
@@ -3861,10 +3753,7 @@ function KitsTab({
       return;
     }
 
-    notify(
-      "Kit cerrado",
-      "Se registró el consumo real y la devolución de insumos no usados.",
-    );
+    notify("Kit cerrado", "Se registró el consumo real y la devolución de insumos no usados.");
 
     setUsageByLotId({});
     setReturnNotesByItemId({});
@@ -3886,10 +3775,7 @@ function KitsTab({
 
         if (reservedQty > 0) {
           const newAvailable = Number(lot.quantity_available ?? 0) + reservedQty;
-          const newReserved = Math.max(
-            Number(lot.quantity_reserved ?? 0) - reservedQty,
-            0,
-          );
+          const newReserved = Math.max(Number(lot.quantity_reserved ?? 0) - reservedQty, 0);
 
           await supabase
             .from("inventory_lots")
@@ -3980,17 +3866,12 @@ function KitsTab({
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Active kits" value={activeKits.length} icon={Boxes} />
-        <Kpi
-          label="Open orders"
-          value={activeOrders.length}
-          icon={ClipboardList}
-        />
+        <Kpi label="Open orders" value={activeOrders.length} icon={ClipboardList} />
         <Kpi
           label="Sent to pharmacy"
           value={
             orders.filter(
-              (order) =>
-                String(order.status ?? "").toUpperCase() === "SENT_TO_PHARMACY",
+              (order) => String(order.status ?? "").toUpperCase() === "SENT_TO_PHARMACY",
             ).length
           }
           icon={Truck}
@@ -4005,11 +3886,7 @@ function KitsTab({
 
       <Card>
         <div className="p-4 flex flex-wrap items-center justify-between gap-2 border-b border-border">
-          <ToolbarSearch
-            value={q}
-            onChange={setQ}
-            placeholder="Search kit or procedure type..."
-          />
+          <ToolbarSearch value={q} onChange={setQ} placeholder="Search kit or procedure type..." />
 
           <button
             onClick={onNew}
@@ -4026,9 +3903,7 @@ function KitsTab({
             Loading procedure kits...
           </div>
         ) : filteredKits.length === 0 ? (
-          <div className="p-6 text-[12px] text-muted-foreground">
-            No procedure kits found.
-          </div>
+          <div className="p-6 text-[12px] text-muted-foreground">No procedure kits found.</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
             {filteredKits.map((kit) => {
@@ -4052,8 +3927,7 @@ function KitsTab({
                       </div>
 
                       <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                        {kit.procedure_type ?? "No procedure type"} ·{" "}
-                        {items.length} component
+                        {kit.procedure_type ?? "No procedure type"} · {items.length} component
                         {items.length === 1 ? "" : "s"}
                       </p>
                     </div>
@@ -4088,17 +3962,13 @@ function KitsTab({
                               <span className="truncate">
                                 {product?.name ?? "Producto sin nombre"}
                               </span>
-                              {item.required === false && (
-                                <Pill tone="muted">Optional</Pill>
-                              )}
+                              {item.required === false && <Pill tone="muted">Optional</Pill>}
                             </div>
 
                             <div className="text-[11px] tabular-nums shrink-0">
                               <span className="font-semibold">
                                 {Number(item.quantity_required ?? 0)}{" "}
-                                {item.unit_of_measure ??
-                                  product?.unit_of_measure ??
-                                  ""}
+                                {item.unit_of_measure ?? product?.unit_of_measure ?? ""}
                               </span>
                             </div>
                           </div>
@@ -4168,9 +4038,7 @@ function KitsTab({
 
         <div className="divide-y divide-border">
           {filteredOrders.length === 0 ? (
-            <div className="p-6 text-[12px] text-muted-foreground">
-              No kit orders found.
-            </div>
+            <div className="p-6 text-[12px] text-muted-foreground">No kit orders found.</div>
           ) : (
             filteredOrders.map((order) => {
               const kit = normalizeKitRelation(order.procedure_kits);
@@ -4191,9 +4059,7 @@ function KitsTab({
                     </p>
 
                     <p className="text-[10.5px] text-muted-foreground">
-                      {order.requested_at
-                        ? formatInventoryDate(order.requested_at)
-                        : "-"}
+                      {order.requested_at ? formatInventoryDate(order.requested_at) : "-"}
                     </p>
                   </div>
 
@@ -4258,9 +4124,7 @@ function ProcedureKitOrderPanel({
   usageByLotId: Record<string, string>;
   setUsageByLotId: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   returnNotesByItemId: Record<string, string>;
-  setReturnNotesByItemId: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
+  setReturnNotesByItemId: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onClose: () => void;
   onSendToPharmacy: (order: ProcedureKitOrderDb) => Promise<void>;
   onPrepared: (order: ProcedureKitOrderDb) => Promise<void>;
@@ -4275,12 +4139,7 @@ function ProcedureKitOrderPanel({
   const canPrepare = status === "SENT_TO_PHARMACY";
   const canDeliver = status === "PREPARED_BY_PHARMACY";
   const canCloseUsage = status === "DELIVERED_TO_PROCEDURE";
-  const canCancel = ![
-    "CLOSED",
-    "PARTIALLY_RETURNED",
-    "RETURNED",
-    "CANCELLED",
-  ].includes(status);
+  const canCancel = !["CLOSED", "PARTIALLY_RETURNED", "RETURNED", "CANCELLED"].includes(status);
 
   return (
     <Panel
@@ -4370,8 +4229,7 @@ function ProcedureKitOrderPanel({
             </div>
 
             <p className="text-[11px] text-muted-foreground mt-2">
-              La reserva no es consumo. El consumo real se registra al cerrar el
-              procedimiento.
+              La reserva no es consumo. El consumo real se registra al cerrar el procedimiento.
             </p>
           </div>
 
@@ -4388,15 +4246,10 @@ function ProcedureKitOrderPanel({
             const product = normalizeKitRelation(item.products);
 
             return (
-              <div
-                key={item.id}
-                className="rounded-xl border border-border bg-card p-4"
-              >
+              <div key={item.id} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[13px] font-semibold">
-                      {product?.name ?? "Producto"}
-                    </p>
+                    <p className="text-[13px] font-semibold">{product?.name ?? "Producto"}</p>
 
                     <p className="text-[11px] text-muted-foreground mt-1">
                       Requerido: {Number(item.quantity_required ?? 0)}{" "}
@@ -4421,9 +4274,7 @@ function ProcedureKitOrderPanel({
                   <div className="mt-4 space-y-2">
                     {(item.procedure_kit_order_item_lots ?? []).map((lotRow) => {
                       const lot = normalizeKitRelation(lotRow.inventory_lots);
-                      const deliveredQty = Number(
-                        lotRow.quantity_delivered ?? 0,
-                      );
+                      const deliveredQty = Number(lotRow.quantity_delivered ?? 0);
                       const usedQty = Number(usageByLotId[lotRow.id] ?? 0);
                       const returnedQty = Math.max(deliveredQty - usedQty, 0);
 
@@ -4445,18 +4296,15 @@ function ProcedureKitOrderPanel({
                               </p>
 
                               <p className="text-[10.5px] text-muted-foreground mt-1">
-                                Reservado:{" "}
-                                {Number(lotRow.quantity_reserved ?? 0)}
+                                Reservado: {Number(lotRow.quantity_reserved ?? 0)}
                                 {" · "}
-                                Preparado:{" "}
-                                {Number(lotRow.quantity_prepared ?? 0)}
+                                Preparado: {Number(lotRow.quantity_prepared ?? 0)}
                                 {" · "}
                                 Entregado: {deliveredQty}
                                 {" · "}
                                 Usado: {Number(lotRow.quantity_used ?? 0)}
                                 {" · "}
-                                Devuelto:{" "}
-                                {Number(lotRow.quantity_returned ?? 0)}
+                                Devuelto: {Number(lotRow.quantity_returned ?? 0)}
                               </p>
 
                               {lot?.expiration_date && (
@@ -4466,40 +4314,35 @@ function ProcedureKitOrderPanel({
                               )}
                             </div>
 
-                            <ProcedureKitStatusBadge
-                              status={lotRow.status ?? "RESERVED"}
-                            />
+                            <ProcedureKitStatusBadge status={lotRow.status ?? "RESERVED"} />
                           </div>
 
-                          {status === "DELIVERED_TO_PROCEDURE" &&
-                            deliveredQty > 0 && (
-                              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <label className="block">
-                                  <span className="text-[10.5px] text-muted-foreground">
-                                    Cantidad usada
-                                  </span>
+                          {status === "DELIVERED_TO_PROCEDURE" && deliveredQty > 0 && (
+                            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <label className="block">
+                                <span className="text-[10.5px] text-muted-foreground">
+                                  Cantidad usada
+                                </span>
 
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    max={deliveredQty}
-                                    value={usageByLotId[lotRow.id] ?? ""}
-                                    onChange={(event) =>
-                                      setUsageByLotId((current) => ({
-                                        ...current,
-                                        [lotRow.id]: event.target.value,
-                                      }))
-                                    }
-                                    placeholder={`Máximo ${deliveredQty}`}
-                                    className="mt-1 w-full h-8 rounded-md border border-border bg-card px-2 text-[11px] outline-none"
-                                  />
-                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={deliveredQty}
+                                  value={usageByLotId[lotRow.id] ?? ""}
+                                  onChange={(event) =>
+                                    setUsageByLotId((current) => ({
+                                      ...current,
+                                      [lotRow.id]: event.target.value,
+                                    }))
+                                  }
+                                  placeholder={`Máximo ${deliveredQty}`}
+                                  className="mt-1 w-full h-8 rounded-md border border-border bg-card px-2 text-[11px] outline-none"
+                                />
+                              </label>
 
-                                <Field label="Devolución calculada">
-                                  {returnedQty}
-                                </Field>
-                              </div>
-                            )}
+                              <Field label="Devolución calculada">{returnedQty}</Field>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -4522,13 +4365,12 @@ function ProcedureKitOrderPanel({
                   </div>
                 )}
 
-                {String(item.status ?? "").toUpperCase() ===
-                  "INSUFFICIENT_STOCK" && (
-                    <div className="mt-3 rounded-md border border-warning/20 bg-warning/5 text-warning px-3 py-2 text-[11px] flex items-center gap-2">
-                      <AlertTriangle className="size-3.5" />
-                      Stock insuficiente para este insumo.
-                    </div>
-                  )}
+                {String(item.status ?? "").toUpperCase() === "INSUFFICIENT_STOCK" && (
+                  <div className="mt-3 rounded-md border border-warning/20 bg-warning/5 text-warning px-3 py-2 text-[11px] flex items-center gap-2">
+                    <AlertTriangle className="size-3.5" />
+                    Stock insuficiente para este insumo.
+                  </div>
+                )}
               </div>
             );
           })}
@@ -4538,13 +4380,7 @@ function ProcedureKitOrderPanel({
   );
 }
 
-function KitEditPanel({
-  kitId,
-  onClose,
-}: {
-  kitId: string;
-  onClose: () => void;
-}) {
+function KitEditPanel({ kitId, onClose }: { kitId: string; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -4574,16 +4410,16 @@ function KitEditPanel({
   async function loadEditData() {
     setLoading(true);
 
-    const [{ data: productRows }, { data: kitData, error: kitError }] =
-      await Promise.all([
-        supabase
-          .from("products")
-          .select("id, name, unit_of_measure, presentation, category")
-          .eq("active", true)
-          .order("name"),
-        supabase
-          .from("procedure_kits")
-          .select(`
+    const [{ data: productRows }, { data: kitData, error: kitError }] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id, name, unit_of_measure, presentation, category")
+        .eq("active", true)
+        .order("name"),
+      supabase
+        .from("procedure_kits")
+        .select(
+          `
             id,
             clinic_id,
             name,
@@ -4605,10 +4441,11 @@ function KitEditPanel({
                 category
               )
             )
-          `)
-          .eq("id", kitId)
-          .single(),
-      ]);
+          `,
+        )
+        .eq("id", kitId)
+        .single(),
+    ]);
 
     setProducts(productRows ?? []);
 
@@ -4621,12 +4458,10 @@ function KitEditPanel({
 
     const normalized = {
       ...kitData,
-      procedure_kit_items: (kitData.procedure_kit_items ?? []).map(
-        (item: any) => ({
-          ...item,
-          products: normalizeKitRelation(item.products),
-        }),
-      ),
+      procedure_kit_items: (kitData.procedure_kit_items ?? []).map((item: any) => ({
+        ...item,
+        products: normalizeKitRelation(item.products),
+      })),
     } as ProcedureKitDb;
 
     setKit(normalized);
@@ -4641,9 +4476,7 @@ function KitEditPanel({
         quantity_required: String(Number(item.quantity_required ?? 0)),
         required: item.required !== false,
         unit_of_measure:
-          item.unit_of_measure ??
-          normalizeKitRelation(item.products)?.unit_of_measure ??
-          "",
+          item.unit_of_measure ?? normalizeKitRelation(item.products)?.unit_of_measure ?? "",
         notes: item.notes ?? "",
       })),
     );
@@ -4724,10 +4557,7 @@ function KitEditPanel({
       };
 
       if (item.id) {
-        await supabase
-          .from("procedure_kit_items")
-          .update(payload)
-          .eq("id", item.id);
+        await supabase.from("procedure_kit_items").update(payload).eq("id", item.id);
       } else {
         await supabase.from("procedure_kit_items").insert({
           id: crypto.randomUUID(),
@@ -4783,18 +4613,14 @@ function KitEditPanel({
       }
     >
       {loading ? (
-        <div className="text-[12px] text-muted-foreground">
-          Loading kit information...
-        </div>
+        <div className="text-[12px] text-muted-foreground">Loading kit information...</div>
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Kit name"
               value={name}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setName(event.target.value)
-              }
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
             />
 
             <Input
@@ -4837,9 +4663,7 @@ function KitEditPanel({
                     products={products}
                     onChange={(next) =>
                       setItems((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index ? next : row,
-                        ),
+                        current.map((row, rowIndex) => (rowIndex === index ? next : row)),
                       )
                     }
                     onRemove={() =>
@@ -4925,10 +4749,7 @@ function NewKitPanel({ onClose }: { onClose: () => void }) {
     }
 
     if (!procedureType.trim()) {
-      notify(
-        "Procedimiento requerido",
-        "El tipo de procedimiento es obligatorio.",
-      );
+      notify("Procedimiento requerido", "El tipo de procedimiento es obligatorio.");
       return;
     }
 
@@ -4976,9 +4797,7 @@ function NewKitPanel({ onClose }: { onClose: () => void }) {
       updated_at: now,
     }));
 
-    const { error: itemError } = await supabase
-      .from("procedure_kit_items")
-      .insert(itemPayload);
+    const { error: itemError } = await supabase.from("procedure_kit_items").insert(itemPayload);
 
     if (itemError) {
       console.error("Error creating kit items:", itemError);
@@ -5029,8 +4848,7 @@ function NewKitPanel({ onClose }: { onClose: () => void }) {
           <div>
             <h3 className="text-[13px] font-semibold">Kit information</h3>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Define la plantilla base del kit. Esto todavía no reserva
-              inventario.
+              Define la plantilla base del kit. Esto todavía no reserva inventario.
             </p>
           </div>
 
@@ -5058,9 +4876,7 @@ function NewKitPanel({ onClose }: { onClose: () => void }) {
               label="Kit name"
               placeholder="Ej. Kit aspiración folicular"
               value={name}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setName(event.target.value)
-              }
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setName(event.target.value)}
             />
 
             <Input
@@ -5102,15 +4918,11 @@ function NewKitPanel({ onClose }: { onClose: () => void }) {
                   products={products}
                   onChange={(next) =>
                     setItems((current) =>
-                      current.map((row, rowIndex) =>
-                        rowIndex === index ? next : row,
-                      ),
+                      current.map((row, rowIndex) => (rowIndex === index ? next : row)),
                     )
                   }
                   onRemove={() =>
-                    setItems((current) =>
-                      current.filter((_, rowIndex) => rowIndex !== index),
-                    )
+                    setItems((current) => current.filter((_, rowIndex) => rowIndex !== index))
                   }
                 />
               ))}
@@ -5256,17 +5068,15 @@ function ProcedureKitStatusBadge({ status }: { status: string }) {
 
   const tone: KitStatusTone =
     normalized === "VALIDATED" ||
-      normalized === "RESERVED" ||
-      normalized === "PREPARED_BY_PHARMACY" ||
-      normalized === "PREPARED" ||
-      normalized === "DELIVERED_TO_PROCEDURE" ||
-      normalized === "DELIVERED" ||
-      normalized === "CLOSED" ||
-      normalized === "USED"
+    normalized === "RESERVED" ||
+    normalized === "PREPARED_BY_PHARMACY" ||
+    normalized === "PREPARED" ||
+    normalized === "DELIVERED_TO_PROCEDURE" ||
+    normalized === "DELIVERED" ||
+    normalized === "CLOSED" ||
+    normalized === "USED"
       ? "success"
-      : normalized === "DRAFT" ||
-        normalized === "VALIDATING" ||
-        normalized === "SENT_TO_PHARMACY"
+      : normalized === "DRAFT" || normalized === "VALIDATING" || normalized === "SENT_TO_PHARMACY"
         ? "primary"
         : normalized === "INSUFFICIENT_STOCK"
           ? "warning"
@@ -5335,19 +5145,31 @@ function formatInventoryDate(value: string | null) {
 // 7. COLD CHAIN TAB
 // ============================================================
 function ColdChainTab({ onOpen }: { onOpen: (u: ColdUnit) => void }) {
-  const ok = COLD_UNITS.filter(u => u.status === "ok").length;
-  const incidents = COLD_UNITS.filter(u => u.status !== "ok").length;
+  const ok = COLD_UNITS.filter((u) => u.status === "ok").length;
+  const incidents = COLD_UNITS.filter((u) => u.status !== "ok").length;
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Storage units" value={COLD_UNITS.length} icon={Snowflake} />
         <Kpi label="Within range" value={ok} tone="success" icon={CheckCircle2} />
-        <Kpi label="Active incidents" value={incidents} tone={incidents > 0 ? "warning" : "default"} icon={AlertTriangle} />
-        <Kpi label="Affected lots" value={COLD_UNITS.filter(u => u.status !== "ok").reduce((s, u) => s + u.affectedLots, 0)} icon={Layers} />
+        <Kpi
+          label="Active incidents"
+          value={incidents}
+          tone={incidents > 0 ? "warning" : "default"}
+          icon={AlertTriangle}
+        />
+        <Kpi
+          label="Affected lots"
+          value={COLD_UNITS.filter((u) => u.status !== "ok").reduce(
+            (s, u) => s + u.affectedLots,
+            0,
+          )}
+          icon={Layers}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {COLD_UNITS.map(u => (
+        {COLD_UNITS.map((u) => (
           <button
             key={u.id}
             onClick={() => onOpen(u)}
@@ -5361,30 +5183,36 @@ function ColdChainTab({ onOpen }: { onOpen: (u: ColdUnit) => void }) {
           >
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
-                <div className={cn(
-                  "size-9 rounded-md flex items-center justify-center shrink-0",
-                  u.status === "ok" && "bg-accent text-primary",
-                  u.status === "warning" && "bg-warning/15 text-warning",
-                  u.status === "critical" && "bg-critical/15 text-critical",
-                  u.status === "offline" && "bg-secondary text-muted-foreground",
-                )}>
+                <div
+                  className={cn(
+                    "size-9 rounded-md flex items-center justify-center shrink-0",
+                    u.status === "ok" && "bg-accent text-primary",
+                    u.status === "warning" && "bg-warning/15 text-warning",
+                    u.status === "critical" && "bg-critical/15 text-critical",
+                    u.status === "offline" && "bg-secondary text-muted-foreground",
+                  )}
+                >
                   <Thermometer className="size-4" />
                 </div>
                 <div>
                   <p className="text-[13px] font-semibold tracking-tight">{u.name}</p>
-                  <p className="text-[10.5px] text-muted-foreground">{u.type} · {u.site}</p>
+                  <p className="text-[10.5px] text-muted-foreground">
+                    {u.type} · {u.site}
+                  </p>
                 </div>
               </div>
               <ColdStatusBadge status={u.status} />
             </div>
 
             <div className="flex items-baseline gap-2">
-              <p className={cn(
-                "text-[28px] font-semibold tabular-nums tracking-tight leading-none",
-                u.status === "critical" && "text-critical",
-                u.status === "warning" && "text-warning",
-                u.status === "offline" && "text-muted-foreground",
-              )}>
+              <p
+                className={cn(
+                  "text-[28px] font-semibold tabular-nums tracking-tight leading-none",
+                  u.status === "critical" && "text-critical",
+                  u.status === "warning" && "text-warning",
+                  u.status === "offline" && "text-muted-foreground",
+                )}
+              >
                 {u.status === "offline" ? "—" : u.current}
               </p>
               <p className="text-[12px] text-muted-foreground">{u.unit}</p>
@@ -5417,33 +5245,77 @@ function ColdStatusBadge({ status }: { status: ColdUnit["status"] }) {
 // ============================================================
 function InvimaTab({ onOpen }: { onOpen: (a: InvimaAlert) => void }) {
   const [filter, setFilter] = useState<string>("all");
-  const filtered = filter === "all" ? INVIMA_ALERTS : INVIMA_ALERTS.filter(a => a.type === filter);
+  const filtered =
+    filter === "all" ? INVIMA_ALERTS : INVIMA_ALERTS.filter((a) => a.type === filter);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi label="Open alerts" value={INVIMA_ALERTS.filter(a => a.internalStatus !== "closed").length} tone="warning" icon={ShieldAlert} />
-        <Kpi label="Critical" value={INVIMA_ALERTS.filter(a => a.severity === "critical").length} tone="critical" icon={AlertTriangle} />
-        <Kpi label="Clinic impact" value={INVIMA_ALERTS.filter(a => a.clinicImpact).length} icon={Activity} />
-        <Kpi label="Actioned (30d)" value={INVIMA_ALERTS.filter(a => a.internalStatus === "actioned" || a.internalStatus === "closed").length} tone="success" icon={CheckCircle2} />
+        <Kpi
+          label="Open alerts"
+          value={INVIMA_ALERTS.filter((a) => a.internalStatus !== "closed").length}
+          tone="warning"
+          icon={ShieldAlert}
+        />
+        <Kpi
+          label="Critical"
+          value={INVIMA_ALERTS.filter((a) => a.severity === "critical").length}
+          tone="critical"
+          icon={AlertTriangle}
+        />
+        <Kpi
+          label="Clinic impact"
+          value={INVIMA_ALERTS.filter((a) => a.clinicImpact).length}
+          icon={Activity}
+        />
+        <Kpi
+          label="Actioned (30d)"
+          value={
+            INVIMA_ALERTS.filter(
+              (a) => a.internalStatus === "actioned" || a.internalStatus === "closed",
+            ).length
+          }
+          tone="success"
+          icon={CheckCircle2}
+        />
       </div>
 
       <Card>
         <div className="p-4 flex flex-wrap items-center gap-2 border-b border-border">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {["all", "Recall", "Pharmacovigilance", "Technovigilance", "Falsified", "Expired"].map(f => (
-              <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>{f === "all" ? "All" : f}</FilterBtn>
-            ))}
+            {["all", "Recall", "Pharmacovigilance", "Technovigilance", "Falsified", "Expired"].map(
+              (f) => (
+                <FilterBtn key={f} active={filter === f} onClick={() => setFilter(f)}>
+                  {f === "all" ? "All" : f}
+                </FilterBtn>
+              ),
+            )}
           </div>
         </div>
         <ul className="divide-y divide-border">
-          {filtered.map(a => (
-            <button key={a.id} onClick={() => onOpen(a)} className="w-full text-left grid grid-cols-12 gap-3 px-5 py-4 hover:bg-accent/30 transition-colors items-start">
+          {filtered.map((a) => (
+            <button
+              key={a.id}
+              onClick={() => onOpen(a)}
+              className="w-full text-left grid grid-cols-12 gap-3 px-5 py-4 hover:bg-accent/30 transition-colors items-start"
+            >
               <div className="col-span-2 text-[11px]">
                 <p className="font-mono font-semibold text-primary">{a.id}</p>
                 <p className="text-muted-foreground mt-0.5">{a.published}</p>
               </div>
-              <div className="col-span-2"><Pill tone={a.severity === "critical" ? "critical" : a.severity === "warning" ? "warning" : "muted"}>{a.type}</Pill></div>
+              <div className="col-span-2">
+                <Pill
+                  tone={
+                    a.severity === "critical"
+                      ? "critical"
+                      : a.severity === "warning"
+                        ? "warning"
+                        : "muted"
+                  }
+                >
+                  {a.type}
+                </Pill>
+              </div>
               <div className="col-span-5">
                 <p className="text-[13px] font-semibold text-foreground">{a.title}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{a.source}</p>
@@ -5454,11 +5326,25 @@ function InvimaTab({ onOpen }: { onOpen: (a: InvimaAlert) => void }) {
                 )}
               </div>
               <div className="col-span-2 text-[11px] text-muted-foreground">
-                {a.affectedProducts.length > 0 && <p className="text-foreground">{a.affectedProducts.join(", ")}</p>}
-                {a.affectedLots.length > 0 && <p className="font-mono text-[10px]">{a.affectedLots.join(" · ")}</p>}
+                {a.affectedProducts.length > 0 && (
+                  <p className="text-foreground">{a.affectedProducts.join(", ")}</p>
+                )}
+                {a.affectedLots.length > 0 && (
+                  <p className="font-mono text-[10px]">{a.affectedLots.join(" · ")}</p>
+                )}
               </div>
               <div className="col-span-1 text-right">
-                <Pill tone={a.internalStatus === "closed" ? "success" : a.internalStatus === "actioned" ? "primary" : a.internalStatus === "in-review" ? "warning" : "critical"}>
+                <Pill
+                  tone={
+                    a.internalStatus === "closed"
+                      ? "success"
+                      : a.internalStatus === "actioned"
+                        ? "primary"
+                        : a.internalStatus === "in-review"
+                          ? "warning"
+                          : "critical"
+                  }
+                >
                   {a.internalStatus}
                 </Pill>
               </div>
@@ -5473,25 +5359,47 @@ function InvimaTab({ onOpen }: { onOpen: (a: InvimaAlert) => void }) {
 // ============================================================
 // SHARED PANEL SHELL
 // ============================================================
-function Panel({ title, subtitle, onClose, width = "max-w-2xl", children, footer }: {
-  title: string; subtitle?: string; onClose: () => void; width?: string;
-  children: React.ReactNode; footer?: React.ReactNode;
+function Panel({
+  title,
+  subtitle,
+  onClose,
+  width = "max-w-2xl",
+  children,
+  footer,
+}: {
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  width?: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex">
-      <button onClick={onClose} aria-label="Close" className="flex-1 bg-foreground/30 backdrop-blur-[2px]" />
-      <aside className={cn("w-full bg-card border-l border-border flex flex-col shadow-2xl", width)}>
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        className="flex-1 bg-foreground/30 backdrop-blur-[2px]"
+      />
+      <aside
+        className={cn("w-full bg-card border-l border-border flex flex-col shadow-2xl", width)}
+      >
         <header className="flex items-start justify-between gap-3 px-6 py-5 border-b border-border">
           <div>
             <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
             {subtitle && <p className="text-[12px] text-muted-foreground mt-0.5">{subtitle}</p>}
           </div>
-          <button onClick={onClose} className="size-8 rounded-md hover:bg-secondary inline-flex items-center justify-center text-muted-foreground">
+          <button
+            onClick={onClose}
+            className="size-8 rounded-md hover:bg-secondary inline-flex items-center justify-center text-muted-foreground"
+          >
             <X className="size-4" />
           </button>
         </header>
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
-        {footer && <footer className="px-6 py-4 border-t border-border bg-secondary/40">{footer}</footer>}
+        {footer && (
+          <footer className="px-6 py-4 border-t border-border bg-secondary/40">{footer}</footer>
+        )}
       </aside>
     </div>
   );
@@ -5500,7 +5408,9 @@ function Panel({ title, subtitle, onClose, width = "max-w-2xl", children, footer
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[10.5px] uppercase tracking-wide text-muted-foreground font-medium mb-1">{label}</p>
+      <p className="text-[10.5px] uppercase tracking-wide text-muted-foreground font-medium mb-1">
+        {label}
+      </p>
       <div className="text-[12.5px] text-foreground">{children}</div>
     </div>
   );
@@ -5521,7 +5431,7 @@ function Input({ label, className = "", ...props }: InputProps) {
         {...props}
         className={cn(
           "mt-1 w-full h-9 px-3 text-[12.5px] rounded-md border border-border bg-card focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-accent",
-          className
+          className,
         )}
       />
     </label>
@@ -5541,9 +5451,7 @@ function Textarea({
 }) {
   return (
     <label className="space-y-1.5 block">
-      <span className="text-[11px] font-medium text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
 
       <textarea
         value={value}
@@ -5571,7 +5479,7 @@ function Select({ label, options, className = "", ...props }: SelectProps) {
         {...props}
         className={cn(
           "mt-1 w-full h-9 px-3 text-[12.5px] rounded-md border border-border bg-card focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-accent",
-          className
+          className,
         )}
       >
         <option value="">Select option</option>
@@ -5586,10 +5494,7 @@ function Select({ label, options, className = "", ...props }: SelectProps) {
   );
 }
 
-type CheckboxProps = Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "type"
-> & {
+type CheckboxProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label: string;
 };
 
@@ -5671,13 +5576,7 @@ type ProductEditForm = {
   isSterile: boolean;
 };
 
-function ProductPanel({
-  product,
-  onClose,
-}: {
-  product: MasterProduct;
-  onClose: () => void;
-}) {
+function ProductPanel({ product, onClose }: { product: MasterProduct; onClose: () => void }) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -5701,10 +5600,7 @@ function ProductPanel({
     manufacturer: (product as any).manufacturer ?? "",
     model: (product as any).model ?? "",
     referenceCode:
-      (product as any).reference_code ??
-      (product as any).reference ??
-      product.code ??
-      "",
+      (product as any).reference_code ?? (product as any).reference ?? product.code ?? "",
     riskClass: (product as any).risk_class ?? "",
     requiresPrescription: Boolean((product as any).requires_prescription ?? false),
     requiresCalibration: Boolean((product as any).requires_calibration ?? false),
@@ -5724,7 +5620,8 @@ function ProductPanel({
 
     const { data: lotRows, error: lotError } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
     id,
     clinic_id,
     product_id,
@@ -5741,16 +5638,14 @@ function ProductPanel({
       id,
       name
     )
-  `)
+  `,
+      )
       .eq("product_id", product.id)
       .order("expiration_date", { ascending: true });
 
     if (lotError) {
       console.error("Error loading product lots:", lotError);
-      notify(
-        "Error",
-        lotError.message || "No se pudieron cargar los lotes del producto.",
-      );
+      notify("Error", lotError.message || "No se pudieron cargar los lotes del producto.");
       setLots([]);
     } else {
       const normalizedLots = ((lotRows ?? []) as any[]).map((lot) => ({
@@ -5766,7 +5661,8 @@ function ProductPanel({
     if (lotIds.length > 0) {
       const { data: movementRows, error: movementError } = await supabase
         .from("inventory_movements")
-        .select(`
+        .select(
+          `
           id,
           clinic_id,
           lot_id,
@@ -5780,7 +5676,8 @@ function ProductPanel({
             internal_lot_code,
             manufacturer_lot
           )
-        `)
+        `,
+        )
         .in("lot_id", lotIds)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -5789,12 +5686,10 @@ function ProductPanel({
         console.error("Error loading product movements:", movementError);
         setMovements([]);
       } else {
-        const normalizedMovements = ((movementRows ?? []) as any[]).map(
-          (movement) => ({
-            ...movement,
-            inventory_lots: normalizeProductRelation(movement.inventory_lots),
-          }),
-        );
+        const normalizedMovements = ((movementRows ?? []) as any[]).map((movement) => ({
+          ...movement,
+          inventory_lots: normalizeProductRelation(movement.inventory_lots),
+        }));
 
         setMovements(normalizedMovements as ProductDetailMovement[]);
       }
@@ -5825,17 +5720,11 @@ function ProductPanel({
       presentation: form.presentation.trim() || null,
       unit_of_measure: form.unitOfMeasure.trim(),
       storage_condition: form.storageCondition.trim() || null,
-      temperature_min: form.temperatureMin.trim()
-        ? Number(form.temperatureMin)
-        : null,
-      temperature_max: form.temperatureMax.trim()
-        ? Number(form.temperatureMax)
-        : null,
+      temperature_min: form.temperatureMin.trim() ? Number(form.temperatureMin) : null,
+      temperature_max: form.temperatureMax.trim() ? Number(form.temperatureMax) : null,
       invima_registration: form.invimaRegistration.trim() || null,
       active: form.active,
-      strength_value: form.strengthValue.trim()
-        ? Number(form.strengthValue)
-        : null,
+      strength_value: form.strengthValue.trim() ? Number(form.strengthValue) : null,
       product_type: form.productType.trim() || null,
       brand: form.brand.trim() || null,
       manufacturer: form.manufacturer.trim() || null,
@@ -5849,10 +5738,7 @@ function ProductPanel({
       is_sterile: form.isSterile,
     };
 
-    const { error } = await supabase
-      .from("products")
-      .update(payload)
-      .eq("id", product.id);
+    const { error } = await supabase.from("products").update(payload).eq("id", product.id);
 
     if (error) {
       console.error("Error updating product:", error);
@@ -5883,10 +5769,7 @@ function ProductPanel({
 
     if (error) {
       console.error("Error toggling product status:", error);
-      notify(
-        "Error",
-        error.message || "No se pudo cambiar el estado del producto.",
-      );
+      notify("Error", error.message || "No se pudo cambiar el estado del producto.");
       setSaving(false);
       return;
     }
@@ -5898,9 +5781,7 @@ function ProductPanel({
 
     notify(
       nextActive ? "Producto activado" : "Producto desactivado",
-      nextActive
-        ? "El producto quedó disponible."
-        : "El producto quedó inactivo.",
+      nextActive ? "El producto quedó disponible." : "El producto quedó inactivo.",
     );
 
     window.dispatchEvent(new Event("inventory-products-refresh"));
@@ -5928,8 +5809,9 @@ function ProductPanel({
   return (
     <Panel
       title={form.name || product.name}
-      subtitle={`${form.referenceCode || product.id.slice(0, 8)} · ${form.genericName || "Sin genérico"
-        }`}
+      subtitle={`${form.referenceCode || product.id.slice(0, 8)} · ${
+        form.genericName || "Sin genérico"
+      }`}
       onClose={onClose}
       width="max-w-5xl"
       footer={
@@ -5988,58 +5870,44 @@ function ProductPanel({
             <ProductTextInput
               label="Product name"
               value={form.name}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, name: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, name: value }))}
             />
 
             <ProductTextInput
               label="Generic name"
               value={form.genericName}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, genericName: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, genericName: value }))}
             />
 
             <ProductTextInput
               label="Category"
               value={form.category}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, category: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, category: value }))}
             />
 
             <ProductTextInput
               label="Product type"
               value={form.productType}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, productType: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, productType: value }))}
             />
 
             <ProductTextInput
               label="Presentation"
               value={form.presentation}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, presentation: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, presentation: value }))}
             />
 
             <ProductTextInput
               label="Unit of measure"
               value={form.unitOfMeasure}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, unitOfMeasure: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, unitOfMeasure: value }))}
             />
 
             <ProductTextInput
               label="Strength value"
               type="number"
               value={form.strengthValue}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, strengthValue: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, strengthValue: value }))}
             />
 
             <ProductTextInput
@@ -6056,67 +5924,51 @@ function ProductPanel({
             <ProductTextInput
               label="Brand"
               value={form.brand}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, brand: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, brand: value }))}
             />
 
             <ProductTextInput
               label="Manufacturer"
               value={form.manufacturer}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, manufacturer: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, manufacturer: value }))}
             />
 
             <ProductTextInput
               label="Model"
               value={form.model}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, model: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, model: value }))}
             />
 
             <ProductTextInput
               label="Reference code"
               value={form.referenceCode}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, referenceCode: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, referenceCode: value }))}
             />
 
             <ProductTextInput
               label="Risk class"
               value={form.riskClass}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, riskClass: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, riskClass: value }))}
             />
 
             <ProductTextInput
               label="Storage condition"
               value={form.storageCondition}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, storageCondition: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, storageCondition: value }))}
             />
 
             <ProductTextInput
               label="Temperature min"
               type="number"
               value={form.temperatureMin}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, temperatureMin: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, temperatureMin: value }))}
             />
 
             <ProductTextInput
               label="Temperature max"
               type="number"
               value={form.temperatureMax}
-              onChange={(value) =>
-                setForm((current) => ({ ...current, temperatureMax: value }))
-              }
+              onChange={(value) => setForm((current) => ({ ...current, temperatureMax: value }))}
             />
 
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
@@ -6182,9 +6034,7 @@ function ProductPanel({
                   <Pill tone="muted">Inactive</Pill>
                 )}
 
-                {form.requiresPrescription && (
-                  <Pill tone="warning">Prescription</Pill>
-                )}
+                {form.requiresPrescription && <Pill tone="warning">Prescription</Pill>}
               </div>
             </div>
           </div>
@@ -6237,9 +6087,7 @@ function ProductPanel({
                   >
                     <div>
                       <p className="font-mono font-semibold text-primary">
-                        {lot.manufacturer_lot ??
-                          lot.internal_lot_code ??
-                          lot.id.slice(0, 8)}
+                        {lot.manufacturer_lot ?? lot.internal_lot_code ?? lot.id.slice(0, 8)}
                       </p>
 
                       <p className="text-muted-foreground">
@@ -6258,9 +6106,7 @@ function ProductPanel({
                         Reserved {reserved} · Consumed {consumed}
                       </p>
 
-                      <InventoryLotStatusBadge
-                        status={(lot.status ?? "available") as any}
-                      />
+                      <InventoryLotStatusBadge status={(lot.status ?? "available") as any} />
                     </div>
                   </div>
                 );
@@ -6269,16 +6115,11 @@ function ProductPanel({
         </div>
 
         <div>
-          <SectionHeader
-            title="Recent movements"
-            hint="Last 5 inventory movements"
-          />
+          <SectionHeader title="Recent movements" hint="Last 5 inventory movements" />
 
           <ol className="space-y-2">
             {movements.map((movement) => {
-              const meta = movementMeta(
-                (movement.movement_type ?? "adjustment") as any,
-              );
+              const meta = movementMeta((movement.movement_type ?? "adjustment") as any);
 
               const lotCode =
                 movement.inventory_lots?.manufacturer_lot ??
@@ -6292,22 +6133,16 @@ function ProductPanel({
                   className="flex items-center justify-between gap-3 text-[11.5px] border border-border rounded-md px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
-                    <Pill tone={meta.tone === "neutral" ? "muted" : meta.tone}>
-                      {meta.label}
-                    </Pill>
+                    <Pill tone={meta.tone === "neutral" ? "muted" : meta.tone}>{meta.label}</Pill>
 
                     <span className="text-foreground">
                       {Number(movement.quantity ?? 0)} {form.unitOfMeasure}
                     </span>
 
-                    <span className="text-muted-foreground">
-                      · lote {lotCode}
-                    </span>
+                    <span className="text-muted-foreground">· lote {lotCode}</span>
 
                     {movement.reason && (
-                      <span className="text-muted-foreground">
-                        · {movement.reason}
-                      </span>
+                      <span className="text-muted-foreground">· {movement.reason}</span>
                     )}
                   </div>
 
@@ -6471,13 +6306,7 @@ function formatDateShort(value: string | null) {
   }).format(new Date(value));
 }
 
-function SupplierPanel({
-  supplier,
-  onClose,
-}: {
-  supplier: Supplier;
-  onClose: () => void;
-}) {
+function SupplierPanel({ supplier, onClose }: { supplier: Supplier; onClose: () => void }) {
   const [linkedProducts, setLinkedProducts] = useState<SupplierProductRow[]>([]);
   const [recentLots, setRecentLots] = useState<SupplierLotRow[]>([]);
   const [loadingRelations, setLoadingRelations] = useState(false);
@@ -6505,7 +6334,8 @@ function SupplierPanel({
 
     const { data: productLinksData, error: productLinksError } = await supabase
       .from("product_suppliers")
-      .select(`
+      .select(
+        `
         id,
         product_id,
         supplier_id,
@@ -6524,7 +6354,8 @@ function SupplierPanel({
           reference_code,
           active
         )
-      `)
+      `,
+      )
       .eq("supplier_id", supplierData.id)
       .order("is_primary", { ascending: false });
 
@@ -6538,18 +6369,16 @@ function SupplierPanel({
       return;
     }
 
-    const normalizedProductLinks = (
-      productLinksData as unknown as RawSupplierProductRow[]
-    ).map((row) => ({
-      ...row,
-      products: normalizeRelation(row.products),
-    }));
+    const normalizedProductLinks = (productLinksData as unknown as RawSupplierProductRow[]).map(
+      (row) => ({
+        ...row,
+        products: normalizeRelation(row.products),
+      }),
+    );
 
     setLinkedProducts(normalizedProductLinks);
 
-    const productIds = normalizedProductLinks
-      .map((row) => row.product_id)
-      .filter(Boolean);
+    const productIds = normalizedProductLinks.map((row) => row.product_id).filter(Boolean);
 
     if (productIds.length === 0) {
       setRecentLots([]);
@@ -6559,7 +6388,8 @@ function SupplierPanel({
 
     const { data: lotsData, error: lotsError } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
         id,
         product_id,
         internal_lot_code,
@@ -6573,7 +6403,8 @@ function SupplierPanel({
           id,
           name
         )
-      `)
+      `,
+      )
       .in("product_id", productIds)
       .order("expiration_date", { ascending: true })
       .limit(10);
@@ -6587,20 +6418,16 @@ function SupplierPanel({
       return;
     }
 
-    const normalizedLots = (lotsData as unknown as RawSupplierLotRow[]).map(
-      (row) => ({
-        ...row,
-        products: normalizeRelation(row.products),
-      }),
-    );
+    const normalizedLots = (lotsData as unknown as RawSupplierLotRow[]).map((row) => ({
+      ...row,
+      products: normalizeRelation(row.products),
+    }));
 
     setRecentLots(normalizedLots);
     setLoadingRelations(false);
   }
 
-  const activeProducts = linkedProducts.filter(
-    (item) => item.products?.active !== false,
-  );
+  const activeProducts = linkedProducts.filter((item) => item.products?.active !== false);
 
   const openLots = recentLots.filter(
     (lot) =>
@@ -6611,11 +6438,7 @@ function SupplierPanel({
   );
 
   const categories = Array.from(
-    new Set(
-      linkedProducts
-        .map((item) => item.products?.category)
-        .filter(Boolean) as string[],
-    ),
+    new Set(linkedProducts.map((item) => item.products?.category).filter(Boolean) as string[]),
   );
 
   const supplierSubtitle = [
@@ -6740,9 +6563,7 @@ function SupplierPanel({
                         <div className="text-[10.5px] text-muted-foreground mt-0.5">
                           {product?.product_type ?? "Product"}
                           {product?.category ? ` · ${product.category}` : ""}
-                          {product?.reference_code
-                            ? ` · Ref ${product.reference_code}`
-                            : ""}
+                          {product?.reference_code ? ` · Ref ${product.reference_code}` : ""}
                         </div>
 
                         {(product?.brand || product?.manufacturer) && (
@@ -6785,10 +6606,7 @@ function SupplierPanel({
           ) : (
             <div className="space-y-1.5">
               {recentLots.slice(0, 5).map((lot) => {
-                const lotCode =
-                  lot.internal_lot_code ??
-                  lot.manufacturer_lot ??
-                  lot.id.slice(0, 8);
+                const lotCode = lot.internal_lot_code ?? lot.manufacturer_lot ?? lot.id.slice(0, 8);
 
                 return (
                   <div
@@ -6796,9 +6614,7 @@ function SupplierPanel({
                     className="flex items-center justify-between border border-border rounded-md px-3 py-2 text-[11.5px]"
                   >
                     <div>
-                      <span className="font-mono text-primary font-semibold">
-                        {lotCode}
-                      </span>
+                      <span className="font-mono text-primary font-semibold">{lotCode}</span>
 
                       <span className="text-muted-foreground">
                         {" "}
@@ -6812,10 +6628,7 @@ function SupplierPanel({
                       </span>
 
                       <span className="text-muted-foreground">
-                        exp{" "}
-                        {lot.expiration_date
-                          ? formatDateShort(lot.expiration_date)
-                          : "-"}
+                        exp {lot.expiration_date ? formatDateShort(lot.expiration_date) : "-"}
                       </span>
 
                       <InventoryLotStatusBadge status={lot.status ?? "AVAILABLE"} />
@@ -6848,14 +6661,20 @@ function TransferPanel({ transfer, onClose }: { transfer: Transfer; onClose: () 
       footer={
         <div className="flex items-center justify-between gap-2">
           <button
-            onClick={() => { setStatus("cancelled"); runMockAction("Cancelling transfer", { success: "Transfer cancelled" }); }}
+            onClick={() => {
+              setStatus("cancelled");
+              runMockAction("Cancelling transfer", { success: "Transfer cancelled" });
+            }}
             className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-critical/10 hover:text-critical hover:border-critical/30 inline-flex items-center gap-1.5"
           >
             <XCircle className="size-3.5" /> Cancel
           </button>
           {next && status !== "cancelled" && (
             <button
-              onClick={() => { setStatus(next); runMockAction(`Marking ${next}`, { success: `Transfer ${next}` }); }}
+              onClick={() => {
+                setStatus(next);
+                runMockAction(`Marking ${next}`, { success: `Transfer ${next}` });
+              }}
               className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5"
             >
               Mark as {next} <ArrowRight className="size-3.5" />
@@ -6867,11 +6686,17 @@ function TransferPanel({ transfer, onClose }: { transfer: Transfer; onClose: () 
       <div className="space-y-5">
         <div className="flex items-center justify-between rounded-xl bg-accent/40 border border-accent p-4">
           <div>
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Status</p>
-            <div className="mt-1"><TransferStatusBadge status={status} /></div>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+              Status
+            </p>
+            <div className="mt-1">
+              <TransferStatusBadge status={status} />
+            </div>
           </div>
           <div className="text-right">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Created</p>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+              Created
+            </p>
             <p className="text-[12.5px] font-medium mt-1">{transfer.created}</p>
           </div>
         </div>
@@ -6880,8 +6705,14 @@ function TransferPanel({ transfer, onClose }: { transfer: Transfer; onClose: () 
           <Field label="From">{transfer.from}</Field>
           <Field label="To">{transfer.to}</Field>
           <Field label="Requested by">{transfer.requester}</Field>
-          <Field label="Receiver">{transfer.receiver || <span className="text-muted-foreground">—</span>}</Field>
-          {transfer.reason && <div className="col-span-2"><Field label="Reason">{transfer.reason}</Field></div>}
+          <Field label="Receiver">
+            {transfer.receiver || <span className="text-muted-foreground">—</span>}
+          </Field>
+          {transfer.reason && (
+            <div className="col-span-2">
+              <Field label="Reason">{transfer.reason}</Field>
+            </div>
+          )}
         </div>
 
         <div>
@@ -6903,24 +6734,35 @@ function TransferPanel({ transfer, onClose }: { transfer: Transfer; onClose: () 
           <SectionHeader title="Audit trail" />
           <ol className="space-y-2 text-[11.5px]">
             <li className="flex items-center justify-between border border-border rounded-md px-3 py-2">
-              <span><CheckCircle2 className="size-3 inline text-success mr-1.5" /> Requested by {transfer.requester}</span>
+              <span>
+                <CheckCircle2 className="size-3 inline text-success mr-1.5" /> Requested by{" "}
+                {transfer.requester}
+              </span>
               <span className="text-muted-foreground">{transfer.created}</span>
             </li>
             {status !== "pending" && (
               <li className="flex items-center justify-between border border-border rounded-md px-3 py-2">
-                <span><CheckCircle2 className="size-3 inline text-success mr-1.5" /> Approved by Pharmacy lead</span>
+                <span>
+                  <CheckCircle2 className="size-3 inline text-success mr-1.5" /> Approved by
+                  Pharmacy lead
+                </span>
                 <span className="text-muted-foreground">Today</span>
               </li>
             )}
             {(status === "in-transit" || status === "received") && (
               <li className="flex items-center justify-between border border-border rounded-md px-3 py-2">
-                <span><Truck className="size-3 inline text-primary mr-1.5" /> Dispatched · in transit</span>
+                <span>
+                  <Truck className="size-3 inline text-primary mr-1.5" /> Dispatched · in transit
+                </span>
                 <span className="text-muted-foreground">Today</span>
               </li>
             )}
             {status === "received" && (
               <li className="flex items-center justify-between border border-border rounded-md px-3 py-2">
-                <span><CheckCircle2 className="size-3 inline text-success mr-1.5" /> Received by {transfer.receiver || "—"}</span>
+                <span>
+                  <CheckCircle2 className="size-3 inline text-success mr-1.5" /> Received by{" "}
+                  {transfer.receiver || "—"}
+                </span>
                 <span className="text-muted-foreground">Today</span>
               </li>
             )}
@@ -6942,24 +6784,47 @@ function ColdUnitPanel({ unit, onClose }: { unit: ColdUnit; onClose: () => void 
       onClose={onClose}
       footer={
         <div className="flex items-center justify-between gap-2">
-          <button onClick={() => runMockAction("Acknowledging incident", { success: "Incident acknowledged" })} className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary">Acknowledge</button>
-          <button onClick={() => runMockAction("Calibrating sensor", { detail: "Sending command to gateway", success: "Calibration complete" })} className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90">Calibrate sensor</button>
+          <button
+            onClick={() =>
+              runMockAction("Acknowledging incident", { success: "Incident acknowledged" })
+            }
+            className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary"
+          >
+            Acknowledge
+          </button>
+          <button
+            onClick={() =>
+              runMockAction("Calibrating sensor", {
+                detail: "Sending command to gateway",
+                success: "Calibration complete",
+              })
+            }
+            className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Calibrate sensor
+          </button>
         </div>
       }
     >
       <div className="space-y-5">
         <div className="rounded-xl border border-border p-5 text-center bg-accent/30">
-          <p className={cn(
-            "text-[48px] font-semibold tabular-nums leading-none",
-            unit.status === "critical" && "text-critical",
-            unit.status === "warning" && "text-warning",
-            unit.status === "offline" && "text-muted-foreground",
-          )}>
+          <p
+            className={cn(
+              "text-[48px] font-semibold tabular-nums leading-none",
+              unit.status === "critical" && "text-critical",
+              unit.status === "warning" && "text-warning",
+              unit.status === "offline" && "text-muted-foreground",
+            )}
+          >
             {unit.status === "offline" ? "—" : `${unit.current}`}
             <span className="text-[20px] text-muted-foreground ml-1">{unit.unit}</span>
           </p>
-          <p className="text-[11.5px] text-muted-foreground mt-2">Target {unit.range} · {unit.lastReading}</p>
-          <div className="mt-3"><ColdStatusBadge status={unit.status} /></div>
+          <p className="text-[11.5px] text-muted-foreground mt-2">
+            Target {unit.range} · {unit.lastReading}
+          </p>
+          <div className="mt-3">
+            <ColdStatusBadge status={unit.status} />
+          </div>
         </div>
 
         <div>
@@ -6967,13 +6832,18 @@ function ColdUnitPanel({ unit, onClose }: { unit: ColdUnit; onClose: () => void 
           <div className="h-32 rounded-md border border-border bg-secondary/30 flex items-end gap-0.5 p-2">
             {Array.from({ length: 48 }).map((_, i) => {
               const noise = Math.sin(i / 3) * 1.2 + Math.cos(i / 5) * 0.6;
-              const v = unit.status === "offline" ? 0 : Math.max(0.1, (unit.current + noise + 200) / 220);
+              const v =
+                unit.status === "offline" ? 0 : Math.max(0.1, (unit.current + noise + 200) / 220);
               return (
                 <div
                   key={i}
                   className={cn(
                     "flex-1 rounded-sm",
-                    unit.status === "critical" ? "bg-critical/60" : unit.status === "warning" ? "bg-warning/60" : "bg-primary/40",
+                    unit.status === "critical"
+                      ? "bg-critical/60"
+                      : unit.status === "warning"
+                        ? "bg-warning/60"
+                        : "bg-primary/40",
                   )}
                   style={{ height: `${Math.min(100, v * 100)}%` }}
                 />
@@ -6985,15 +6855,20 @@ function ColdUnitPanel({ unit, onClose }: { unit: ColdUnit; onClose: () => void 
         <div>
           <SectionHeader title="Affected lots" hint={`${unit.affectedLots} lots monitored`} />
           <div className="space-y-1.5">
-            {LOTS.filter(l => l.coldChain).slice(0, 4).map(l => (
-              <div key={l.id} className="flex items-center justify-between border border-border rounded-md px-3 py-2 text-[11.5px]">
-                <div>
-                  <span className="font-mono text-primary font-semibold">{l.id}</span>
-                  <span className="text-muted-foreground"> · {l.product}</span>
+            {LOTS.filter((l) => l.coldChain)
+              .slice(0, 4)
+              .map((l) => (
+                <div
+                  key={l.id}
+                  className="flex items-center justify-between border border-border rounded-md px-3 py-2 text-[11.5px]"
+                >
+                  <div>
+                    <span className="font-mono text-primary font-semibold">{l.id}</span>
+                    <span className="text-muted-foreground"> · {l.product}</span>
+                  </div>
+                  <InventoryLotStatusBadge status={l.status} />
                 </div>
-                <InventoryLotStatusBadge status={l.status} />
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </div>
@@ -7012,17 +6887,39 @@ function InvimaPanel({ alert, onClose }: { alert: InvimaAlert; onClose: () => vo
       onClose={onClose}
       footer={
         <div className="flex items-center justify-between gap-2">
-          <button onClick={() => runMockAction("Marking as closed", { success: "Alert closed" })} className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary">Close alert</button>
-          <button onClick={() => runMockAction("Logging action taken", { success: "Action recorded" })} className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90">Log action</button>
+          <button
+            onClick={() => runMockAction("Marking as closed", { success: "Alert closed" })}
+            className="h-9 px-3 text-[12px] font-medium rounded-md border border-border bg-card hover:bg-secondary"
+          >
+            Close alert
+          </button>
+          <button
+            onClick={() => runMockAction("Logging action taken", { success: "Action recorded" })}
+            className="h-9 px-4 text-[12px] font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Log action
+          </button>
         </div>
       }
     >
       <div className="space-y-5">
         <div className="flex items-center gap-2 flex-wrap">
-          <Pill tone={alert.severity === "critical" ? "critical" : alert.severity === "warning" ? "warning" : "muted"}>{alert.severity}</Pill>
+          <Pill
+            tone={
+              alert.severity === "critical"
+                ? "critical"
+                : alert.severity === "warning"
+                  ? "warning"
+                  : "muted"
+            }
+          >
+            {alert.severity}
+          </Pill>
           <Pill tone="default">{alert.type}</Pill>
           {alert.clinicImpact && <Pill tone="critical">Clinic impact</Pill>}
-          <Pill tone={alert.internalStatus === "closed" ? "success" : "primary"}>{alert.internalStatus}</Pill>
+          <Pill tone={alert.internalStatus === "closed" ? "success" : "primary"}>
+            {alert.internalStatus}
+          </Pill>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -7034,10 +6931,15 @@ function InvimaPanel({ alert, onClose }: { alert: InvimaAlert; onClose: () => vo
           <div>
             <SectionHeader title="Affected products & lots" />
             <div className="space-y-1.5">
-              {alert.affectedProducts.map(p => (
-                <div key={p} className="flex items-center justify-between border border-border rounded-md px-3 py-2 text-[12px]">
+              {alert.affectedProducts.map((p) => (
+                <div
+                  key={p}
+                  className="flex items-center justify-between border border-border rounded-md px-3 py-2 text-[12px]"
+                >
                   <span className="font-medium">{p}</span>
-                  <span className="font-mono text-[10.5px] text-muted-foreground">{alert.affectedLots.join(" · ") || "—"}</span>
+                  <span className="font-mono text-[10.5px] text-muted-foreground">
+                    {alert.affectedLots.join(" · ") || "—"}
+                  </span>
                 </div>
               ))}
             </div>
@@ -7061,7 +6963,10 @@ function InvimaPanel({ alert, onClose }: { alert: InvimaAlert; onClose: () => vo
           </div>
         )}
 
-        <Textarea label="Add observation" placeholder="Document follow-up, patient impact, regulatory contact…" />
+        <Textarea
+          label="Add observation"
+          placeholder="Document follow-up, patient impact, regulatory contact…"
+        />
       </div>
     </Panel>
   );
@@ -7081,7 +6986,6 @@ type ProductType =
   | "MEDICAL_EQUIPMENT"
   | "REAGENT"
   | "SUPPLY";
-
 
 type SupplierOption = {
   id: string;
@@ -7126,13 +7030,13 @@ const PRODUCT_TYPE_OPTIONS: Array<{
   value: ProductType;
   label: string;
 }> = [
-    { value: "MEDICATION", label: "Medicamento" },
-    { value: "HORMONE", label: "Hormona" },
-    { value: "MEDICAL_DEVICE", label: "Dispositivo médico" },
-    { value: "MEDICAL_EQUIPMENT", label: "Equipo médico" },
-    { value: "REAGENT", label: "Reactivo" },
-    { value: "SUPPLY", label: "Insumo" },
-  ];
+  { value: "MEDICATION", label: "Medicamento" },
+  { value: "HORMONE", label: "Hormona" },
+  { value: "MEDICAL_DEVICE", label: "Dispositivo médico" },
+  { value: "MEDICAL_EQUIPMENT", label: "Equipo médico" },
+  { value: "REAGENT", label: "Reactivo" },
+  { value: "SUPPLY", label: "Insumo" },
+];
 
 function NewProductPanel({ onClose }: { onClose: () => void }) {
   const [clinics, setClinics] = useState<ClinicOption[]>([]);
@@ -7222,10 +7126,7 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
     fetchSuppliers();
   }, []);
 
-  const updateField = <K extends keyof NewProductForm>(
-    field: K,
-    value: NewProductForm[K],
-  ) => {
+  const updateField = <K extends keyof NewProductForm>(field: K, value: NewProductForm[K]) => {
     setForm((prev) => ({
       ...prev,
       [field]: value,
@@ -7252,24 +7153,16 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
       product_type: productType,
 
       generic_name:
-        productType === "MEDICATION" || productType === "HORMONE"
-          ? prev.generic_name
-          : "",
+        productType === "MEDICATION" || productType === "HORMONE" ? prev.generic_name : "",
 
       strength_value:
-        productType === "MEDICATION" || productType === "HORMONE"
-          ? prev.strength_value
-          : "",
+        productType === "MEDICATION" || productType === "HORMONE" ? prev.strength_value : "",
 
       model:
-        productType === "MEDICAL_DEVICE" ||
-          productType === "MEDICAL_EQUIPMENT"
-          ? prev.model
-          : "",
+        productType === "MEDICAL_DEVICE" || productType === "MEDICAL_EQUIPMENT" ? prev.model : "",
 
       risk_class:
-        productType === "MEDICAL_DEVICE" ||
-          productType === "MEDICAL_EQUIPMENT"
+        productType === "MEDICAL_DEVICE" || productType === "MEDICAL_EQUIPMENT"
           ? prev.risk_class
           : "",
 
@@ -7278,33 +7171,23 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
           ? prev.requires_prescription
           : false,
 
-      requires_calibration:
-        productType === "MEDICAL_EQUIPMENT"
-          ? prev.requires_calibration
-          : false,
+      requires_calibration: productType === "MEDICAL_EQUIPMENT" ? prev.requires_calibration : false,
 
-      requires_maintenance:
-        productType === "MEDICAL_EQUIPMENT"
-          ? prev.requires_maintenance
-          : false,
+      requires_maintenance: productType === "MEDICAL_EQUIPMENT" ? prev.requires_maintenance : false,
 
       is_reusable:
-        productType === "MEDICAL_DEVICE" ||
-          productType === "MEDICAL_EQUIPMENT"
+        productType === "MEDICAL_DEVICE" || productType === "MEDICAL_EQUIPMENT"
           ? prev.is_reusable
           : false,
 
       is_sterile:
-        productType === "MEDICAL_DEVICE" || productType === "SUPPLY"
-          ? prev.is_sterile
-          : false,
+        productType === "MEDICAL_DEVICE" || productType === "SUPPLY" ? prev.is_sterile : false,
     }));
   };
 
   const getSelectedProductTypeLabel = () => {
     return (
-      PRODUCT_TYPE_OPTIONS.find((item) => item.value === form.product_type)
-        ?.label ?? "Producto"
+      PRODUCT_TYPE_OPTIONS.find((item) => item.value === form.product_type)?.label ?? "Producto"
     );
   };
 
@@ -7420,8 +7303,7 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
     }
 
     if (
-      (form.product_type === "MEDICAL_DEVICE" ||
-        form.product_type === "MEDICAL_EQUIPMENT") &&
+      (form.product_type === "MEDICAL_DEVICE" || form.product_type === "MEDICAL_EQUIPMENT") &&
       !form.risk_class.trim()
     ) {
       runMockAction("Creating product", {
@@ -7451,30 +7333,30 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
 
       storage_condition:
         form.product_type === "MEDICATION" ||
-          form.product_type === "HORMONE" ||
-          form.product_type === "REAGENT"
+        form.product_type === "HORMONE" ||
+        form.product_type === "REAGENT"
           ? form.storage_condition.trim() || null
           : null,
 
       temperature_min:
         form.product_type === "MEDICATION" ||
-          form.product_type === "HORMONE" ||
-          form.product_type === "REAGENT"
+        form.product_type === "HORMONE" ||
+        form.product_type === "REAGENT"
           ? parseNumericOrNull(form.temperature_min)
           : null,
 
       temperature_max:
         form.product_type === "MEDICATION" ||
-          form.product_type === "HORMONE" ||
-          form.product_type === "REAGENT"
+        form.product_type === "HORMONE" ||
+        form.product_type === "REAGENT"
           ? parseNumericOrNull(form.temperature_max)
           : null,
 
       invima_registration:
         form.product_type === "MEDICATION" ||
-          form.product_type === "HORMONE" ||
-          form.product_type === "MEDICAL_DEVICE" ||
-          form.product_type === "MEDICAL_EQUIPMENT"
+        form.product_type === "HORMONE" ||
+        form.product_type === "MEDICAL_DEVICE" ||
+        form.product_type === "MEDICAL_EQUIPMENT"
           ? form.invima_registration.trim() || null
           : null,
 
@@ -7487,37 +7369,35 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
 
       brand:
         form.product_type === "MEDICAL_DEVICE" ||
-          form.product_type === "MEDICAL_EQUIPMENT" ||
-          form.product_type === "REAGENT" ||
-          form.product_type === "SUPPLY"
+        form.product_type === "MEDICAL_EQUIPMENT" ||
+        form.product_type === "REAGENT" ||
+        form.product_type === "SUPPLY"
           ? form.brand.trim() || null
           : null,
 
       manufacturer:
         form.product_type === "MEDICAL_DEVICE" ||
-          form.product_type === "MEDICAL_EQUIPMENT" ||
-          form.product_type === "REAGENT" ||
-          form.product_type === "SUPPLY"
+        form.product_type === "MEDICAL_EQUIPMENT" ||
+        form.product_type === "REAGENT" ||
+        form.product_type === "SUPPLY"
           ? form.manufacturer.trim() || null
           : null,
 
       model:
-        form.product_type === "MEDICAL_DEVICE" ||
-          form.product_type === "MEDICAL_EQUIPMENT"
+        form.product_type === "MEDICAL_DEVICE" || form.product_type === "MEDICAL_EQUIPMENT"
           ? form.model.trim() || null
           : null,
 
       reference_code:
         form.product_type === "MEDICAL_DEVICE" ||
-          form.product_type === "MEDICAL_EQUIPMENT" ||
-          form.product_type === "REAGENT" ||
-          form.product_type === "SUPPLY"
+        form.product_type === "MEDICAL_EQUIPMENT" ||
+        form.product_type === "REAGENT" ||
+        form.product_type === "SUPPLY"
           ? form.reference_code.trim() || null
           : null,
 
       risk_class:
-        form.product_type === "MEDICAL_DEVICE" ||
-          form.product_type === "MEDICAL_EQUIPMENT"
+        form.product_type === "MEDICAL_DEVICE" || form.product_type === "MEDICAL_EQUIPMENT"
           ? form.risk_class.trim() || null
           : null,
 
@@ -7527,18 +7407,13 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
           : false,
 
       requires_calibration:
-        form.product_type === "MEDICAL_EQUIPMENT"
-          ? form.requires_calibration
-          : false,
+        form.product_type === "MEDICAL_EQUIPMENT" ? form.requires_calibration : false,
 
       requires_maintenance:
-        form.product_type === "MEDICAL_EQUIPMENT"
-          ? form.requires_maintenance
-          : false,
+        form.product_type === "MEDICAL_EQUIPMENT" ? form.requires_maintenance : false,
 
       is_reusable:
-        form.product_type === "MEDICAL_DEVICE" ||
-          form.product_type === "MEDICAL_EQUIPMENT"
+        form.product_type === "MEDICAL_DEVICE" || form.product_type === "MEDICAL_EQUIPMENT"
           ? form.is_reusable
           : false,
 
@@ -7555,9 +7430,7 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
 
     console.log("New product payload:", productPayload);
 
-    const { error: productError } = await supabase
-      .from("products")
-      .insert(productPayload);
+    const { error: productError } = await supabase.from("products").insert(productPayload);
 
     if (productError) {
       console.error("Error creating product:", productError);
@@ -7570,14 +7443,12 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    const { error: supplierLinkError } = await supabase
-      .from("product_suppliers")
-      .insert({
-        product_id: form.id,
-        supplier_id: form.supplier_id,
-        clinic_id: form.clinic_id || null,
-        is_primary: true,
-      });
+    const { error: supplierLinkError } = await supabase.from("product_suppliers").insert({
+      product_id: form.id,
+      supplier_id: form.supplier_id,
+      clinic_id: form.clinic_id || null,
+      is_primary: true,
+    });
 
     if (supplierLinkError) {
       console.error("Error linking supplier:", supplierLinkError);
@@ -7635,9 +7506,7 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
 
           <div className="text-left">
             <p className="text-[12.5px] font-medium">Upload product image</p>
-            <p className="text-[11px] text-muted-foreground">
-              PNG, JPG up to 5 MB
-            </p>
+            <p className="text-[11px] text-muted-foreground">PNG, JPG up to 5 MB</p>
           </div>
         </button>
 
@@ -7645,17 +7514,15 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
           <div>
             <h3 className="text-[13px] font-semibold">General information</h3>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Select the product type and supplier. The required information
-              changes according to what you are registering.
+              Select the product type and supplier. The required information changes according to
+              what you are registering.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="space-y-1.5 block">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Clinic
-                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Clinic</span>
 
                 <select
                   value={form.clinic_id}
@@ -7681,9 +7548,7 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
 
             <div className="col-span-2">
               <label className="space-y-1.5 block">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Supplier
-                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Supplier</span>
 
                 <select
                   value={form.supplier_id}
@@ -7710,15 +7575,11 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
             </div>
 
             <label className="space-y-1.5 block">
-              <span className="text-[11px] font-medium text-muted-foreground">
-                Product type
-              </span>
+              <span className="text-[11px] font-medium text-muted-foreground">Product type</span>
 
               <select
                 value={form.product_type}
-                onChange={(e) =>
-                  resetTypeSpecificFields(e.target.value as ProductType)
-                }
+                onChange={(e) => resetTypeSpecificFields(e.target.value as ProductType)}
                 className="h-9 w-full rounded-md border border-border bg-card px-3 text-[12px] outline-none focus:ring-2 focus:ring-primary/20"
               >
                 {PRODUCT_TYPE_OPTIONS.map((item) => (
@@ -7750,44 +7611,43 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
               }
             />
 
-            {(form.product_type === "MEDICATION" ||
-              form.product_type === "HORMONE") && (
-                <>
-                  <Input
-                    label="Generic name"
-                    placeholder="Generic name / active ingredient"
-                    value={form.generic_name}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      updateField("generic_name", e.target.value)
-                    }
-                  />
+            {(form.product_type === "MEDICATION" || form.product_type === "HORMONE") && (
+              <>
+                <Input
+                  label="Generic name"
+                  placeholder="Generic name / active ingredient"
+                  value={form.generic_name}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    updateField("generic_name", e.target.value)
+                  }
+                />
 
-                  <Input
-                    label="Strength value"
-                    placeholder="Example: 500"
-                    type="number"
-                    value={form.strength_value}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      updateField("strength_value", e.target.value)
-                    }
-                  />
+                <Input
+                  label="Strength value"
+                  placeholder="Example: 500"
+                  type="number"
+                  value={form.strength_value}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    updateField("strength_value", e.target.value)
+                  }
+                />
 
-                  <Input
-                    label="Unit of measure"
-                    placeholder="mg, IU, mcg, ml, tablet, capsule..."
-                    value={form.unit_of_measure}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      updateField("unit_of_measure", e.target.value)
-                    }
-                  />
+                <Input
+                  label="Unit of measure"
+                  placeholder="mg, IU, mcg, ml, tablet, capsule..."
+                  value={form.unit_of_measure}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    updateField("unit_of_measure", e.target.value)
+                  }
+                />
 
-                  <Select
-                    label="Category"
-                    value={form.category}
-                    onChange={(e) => updateField("category", e.target.value)}
-                    options={
-                      form.product_type === "HORMONE"
-                        ? [
+                <Select
+                  label="Category"
+                  value={form.category}
+                  onChange={(e) => updateField("category", e.target.value)}
+                  options={
+                    form.product_type === "HORMONE"
+                      ? [
                           "FSH",
                           "LH",
                           "hCG",
@@ -7797,7 +7657,7 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
                           "Estradiol",
                           "Other hormone",
                         ]
-                        : [
+                      : [
                           "Medication",
                           "Antibiotic",
                           "Analgesic",
@@ -7805,55 +7665,44 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
                           "Supplement",
                           "Other medication",
                         ]
-                    }
-                  />
+                  }
+                />
 
-                  <Input
-                    label="Presentation"
-                    placeholder="Box x 10, vial, ampoule, pre-filled syringe..."
-                    value={form.presentation}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      updateField("presentation", e.target.value)
-                    }
-                  />
+                <Input
+                  label="Presentation"
+                  placeholder="Box x 10, vial, ampoule, pre-filled syringe..."
+                  value={form.presentation}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    updateField("presentation", e.target.value)
+                  }
+                />
 
-                  <Select
-                    label="Storage condition"
-                    value={form.storage_condition}
-                    onChange={(e) =>
-                      updateField("storage_condition", e.target.value)
-                    }
-                    options={[
-                      "Room temperature",
-                      "2 – 8 °C",
-                      "-20 °C",
-                      "-80 °C",
-                      "LN2",
-                    ]}
-                  />
+                <Select
+                  label="Storage condition"
+                  value={form.storage_condition}
+                  onChange={(e) => updateField("storage_condition", e.target.value)}
+                  options={["Room temperature", "2 – 8 °C", "-20 °C", "-80 °C", "LN2"]}
+                />
 
-                  <Input
-                    label="INVIMA registration"
-                    placeholder="INVIMA 20XXM-XXXXXX"
-                    value={form.invima_registration}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      updateField("invima_registration", e.target.value)
-                    }
-                  />
+                <Input
+                  label="INVIMA registration"
+                  placeholder="INVIMA 20XXM-XXXXXX"
+                  value={form.invima_registration}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    updateField("invima_registration", e.target.value)
+                  }
+                />
 
-                  <Checkbox
-                    label="Requires prescription"
-                    checked={form.requires_prescription}
-                    onChange={(e) =>
-                      updateField("requires_prescription", e.target.checked)
-                    }
-                  />
-                </>
-              )}
+                <Checkbox
+                  label="Requires prescription"
+                  checked={form.requires_prescription}
+                  onChange={(e) => updateField("requires_prescription", e.target.checked)}
+                />
+              </>
+            )}
 
             {form.product_type === "MEDICAL_DEVICE" && (
               <>
-
                 <Input
                   label="Manufacturer"
                   placeholder="Manufacturer"
@@ -7947,7 +7796,6 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
 
             {form.product_type === "MEDICAL_EQUIPMENT" && (
               <>
-
                 <Input
                   label="Manufacturer"
                   placeholder="Manufacturer"
@@ -8019,17 +7867,13 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
                 <Checkbox
                   label="Requires calibration"
                   checked={form.requires_calibration}
-                  onChange={(e) =>
-                    updateField("requires_calibration", e.target.checked)
-                  }
+                  onChange={(e) => updateField("requires_calibration", e.target.checked)}
                 />
 
                 <Checkbox
                   label="Requires maintenance"
                   checked={form.requires_maintenance}
-                  onChange={(e) =>
-                    updateField("requires_maintenance", e.target.checked)
-                  }
+                  onChange={(e) => updateField("requires_maintenance", e.target.checked)}
                 />
 
                 <Checkbox
@@ -8042,7 +7886,6 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
 
             {form.product_type === "REAGENT" && (
               <>
-
                 <Input
                   label="Manufacturer"
                   placeholder="Manufacturer"
@@ -8097,23 +7940,14 @@ function NewProductPanel({ onClose }: { onClose: () => void }) {
                 <Select
                   label="Storage condition"
                   value={form.storage_condition}
-                  onChange={(e) =>
-                    updateField("storage_condition", e.target.value)
-                  }
-                  options={[
-                    "Room temperature",
-                    "2 – 8 °C",
-                    "-20 °C",
-                    "-80 °C",
-                    "LN2",
-                  ]}
+                  onChange={(e) => updateField("storage_condition", e.target.value)}
+                  options={["Room temperature", "2 – 8 °C", "-20 °C", "-80 °C", "LN2"]}
                 />
               </>
             )}
 
             {form.product_type === "SUPPLY" && (
               <>
-
                 <Input
                   label="Manufacturer"
                   placeholder="Manufacturer"
@@ -8228,10 +8062,7 @@ function NewSupplierPanel({ onClose }: { onClose: () => void }) {
     fetchClinics();
   }, []);
 
-  const updateField = <K extends keyof typeof form>(
-    field: K,
-    value: (typeof form)[K],
-  ) => {
+  const updateField = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) => {
     setForm((prev) => ({
       ...prev,
       [field]: value,
@@ -8319,9 +8150,7 @@ function NewSupplierPanel({ onClose }: { onClose: () => void }) {
       <div className="space-y-5">
         <section className="rounded-xl border border-border bg-card p-4 space-y-4">
           <div>
-            <h3 className="text-[13px] font-semibold">
-              Supplier information
-            </h3>
+            <h3 className="text-[13px] font-semibold">Supplier information</h3>
 
             <p className="text-[11px] text-muted-foreground mt-0.5">
               Basic supplier information for purchases and inventory lots.
@@ -8331,9 +8160,7 @@ function NewSupplierPanel({ onClose }: { onClose: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="space-y-1.5 block">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Clinic
-                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Clinic</span>
 
                 <select
                   value={form.clinic_id}
@@ -8449,11 +8276,13 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
     // =========================
     const { data: locationsData } = await supabase
       .from("locations")
-      .select(`
+      .select(
+        `
         id,
         name,
         type
-      `)
+      `,
+      )
       .eq("active", true)
       .order("name");
 
@@ -8462,7 +8291,8 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
     // =========================
     const { data: lotsData } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
         id,
         quantity_available,
         status,
@@ -8477,7 +8307,8 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
           id,
           name
         )
-      `)
+      `,
+      )
       .gt("quantity_available", 0)
       .neq("status", "expired")
       .order("received_at", { ascending: true });
@@ -8558,7 +8389,6 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
       });
 
       onClose();
-
     } catch (err) {
       console.error("TRANSFER ERROR", err);
     }
@@ -8681,15 +8511,10 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
 
           <div className="space-y-2">
             {lines.map((line, i) => {
-              const selectedLot = lots.find(
-                (l) => l.id === line.lot
-              );
+              const selectedLot = lots.find((l) => l.id === line.lot);
 
               return (
-                <div
-                  key={i}
-                  className="grid grid-cols-12 gap-2 items-end"
-                >
+                <div key={i} className="grid grid-cols-12 gap-2 items-end">
                   {/* PRODUCT */}
                   <div className="col-span-5">
                     <label className="block">
@@ -8708,31 +8533,20 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
                             prev.map((x, idx) =>
                               idx === i
                                 ? {
-                                  ...x,
-                                  product,
-                                  lot: "",
-                                }
-                                : x
-                            )
+                                    ...x,
+                                    product,
+                                    lot: "",
+                                  }
+                                : x,
+                            ),
                           );
                         }}
                         className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-card text-[12px]"
                       >
-                        <option value="">
-                          Select product
-                        </option>
+                        <option value="">Select product</option>
 
-                        {Array.from(
-                          new Set(
-                            lots.map(
-                              (l) => l.products?.name
-                            )
-                          )
-                        ).map((name) => (
-                          <option
-                            key={String(name)}
-                            value={String(name)}
-                          >
+                        {Array.from(new Set(lots.map((l) => l.products?.name))).map((name) => (
+                          <option key={String(name)} value={String(name)}>
                             {String(name)}
                           </option>
                         ))}
@@ -8758,32 +8572,22 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
                             prev.map((x, idx) =>
                               idx === i
                                 ? {
-                                  ...x,
-                                  lot,
-                                }
-                                : x
-                            )
+                                    ...x,
+                                    lot,
+                                  }
+                                : x,
+                            ),
                           );
                         }}
                         className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-card text-[12px]"
                       >
-                        <option value="">
-                          Select lot
-                        </option>
+                        <option value="">Select lot</option>
 
                         {lots
-                          .filter(
-                            (l) =>
-                              l.products?.name ===
-                              line.product
-                          )
+                          .filter((l) => l.products?.name === line.product)
                           .map((l) => (
-                            <option
-                              key={l.id}
-                              value={l.id}
-                            >
-                              {l.id.slice(0, 8)} ·{" "}
-                              {l.quantity_available}{" "}
+                            <option key={l.id} value={l.id}>
+                              {l.id.slice(0, 8)} · {l.quantity_available}{" "}
                               {l.products?.unit_of_measure}
                             </option>
                           ))}
@@ -8803,24 +8607,20 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
                       <input
                         type="number"
                         min={1}
-                        max={
-                          selectedLot?.quantity_available ?? 1
-                        }
+                        max={selectedLot?.quantity_available ?? 1}
                         value={line.qty}
                         onChange={(e) => {
-                          const qty = Number(
-                            e.target.value
-                          );
+                          const qty = Number(e.target.value);
 
                           setLines((prev) =>
                             prev.map((x, idx) =>
                               idx === i
                                 ? {
-                                  ...x,
-                                  qty,
-                                }
-                                : x
-                            )
+                                    ...x,
+                                    qty,
+                                  }
+                                : x,
+                            ),
                           );
                         }}
                         className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-card text-[12px]"
@@ -8830,11 +8630,7 @@ function NewTransferPanel({ onClose }: { onClose: () => void }) {
 
                   {/* DELETE */}
                   <button
-                    onClick={() =>
-                      setLines(
-                        lines.filter((_, x) => x !== i)
-                      )
-                    }
+                    onClick={() => setLines(lines.filter((_, x) => x !== i))}
                     className="col-span-1 size-9 rounded-md border border-border bg-card hover:bg-secondary inline-flex items-center justify-center text-muted-foreground"
                   >
                     <Trash2 className="size-3.5" />

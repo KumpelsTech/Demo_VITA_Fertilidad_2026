@@ -124,18 +124,8 @@ type PharmacyKitOrderItemLot = {
   } | null;
 };
 
-function Card({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn("bg-card border border-border rounded-xl", className)}>
-      {children}
-    </div>
-  );
+function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={cn("bg-card border border-border rounded-xl", className)}>{children}</div>;
 }
 
 function MedicationPharmacyPage() {
@@ -158,7 +148,8 @@ function MedicationPharmacyPage() {
 
     const { data: lotRows, error: lotError } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         product_id,
@@ -181,16 +172,14 @@ function MedicationPharmacyPage() {
           id,
           name
         )
-      `)
+      `,
+      )
       .gt("quantity_reserved", 0)
       .order("expiration_date", { ascending: true });
 
     if (lotError) {
       console.error("Error loading reserved lots:", lotError);
-      notify(
-        "Error",
-        lotError.message || "No se pudieron cargar los lotes reservados.",
-      );
+      notify("Error", lotError.message || "No se pudieron cargar los lotes reservados.");
       setLoading(false);
       return;
     }
@@ -208,10 +197,10 @@ function MedicationPharmacyPage() {
     let prescriptionItemsByProductId = new Map<string, any[]>();
 
     if (productIds.length > 0) {
-      const { data: prescriptionItemRows, error: prescriptionItemError } =
-        await supabase
-          .from("prescription_items")
-          .select(`
+      const { data: prescriptionItemRows, error: prescriptionItemError } = await supabase
+        .from("prescription_items")
+        .select(
+          `
             id,
             prescription_id,
             medication_id,
@@ -227,35 +216,33 @@ function MedicationPharmacyPage() {
             quantity_unit,
             status,
             inventory_status
-          `)
-          .in("medication_id", productIds);
+          `,
+        )
+        .in("medication_id", productIds);
 
       if (prescriptionItemError) {
         console.error("Error loading prescription items:", prescriptionItemError);
         notify(
           "Error",
-          prescriptionItemError.message ||
-            "No se pudieron cargar los ítems de prescripción.",
+          prescriptionItemError.message || "No se pudieron cargar los ítems de prescripción.",
         );
       }
 
-      const validPrescriptionItems = (prescriptionItemRows ?? []).filter(
-        (item: any) => {
-          const status = String(item.status ?? "").toUpperCase();
-          const inventoryStatus = String(item.inventory_status ?? "").toUpperCase();
+      const validPrescriptionItems = (prescriptionItemRows ?? []).filter((item: any) => {
+        const status = String(item.status ?? "").toUpperCase();
+        const inventoryStatus = String(item.inventory_status ?? "").toUpperCase();
 
-          return (
-            status !== "DISPENSED" &&
-            status !== "CANCELLED" &&
-            status !== "CANCELED" &&
-            inventoryStatus !== "DISPENSED" &&
-            inventoryStatus !== "CANCELLED" &&
-            inventoryStatus !== "CANCELED" &&
-            inventoryStatus !== "SENT_TO_NURSING" &&
-            inventoryStatus !== "RECEIVED_BY_NURSING"
-          );
-        },
-      );
+        return (
+          status !== "DISPENSED" &&
+          status !== "CANCELLED" &&
+          status !== "CANCELED" &&
+          inventoryStatus !== "DISPENSED" &&
+          inventoryStatus !== "CANCELLED" &&
+          inventoryStatus !== "CANCELED" &&
+          inventoryStatus !== "SENT_TO_NURSING" &&
+          inventoryStatus !== "RECEIVED_BY_NURSING"
+        );
+      });
 
       prescriptionItemsByProductId = validPrescriptionItems.reduce(
         (map: Map<string, any[]>, item: any) => {
@@ -271,9 +258,7 @@ function MedicationPharmacyPage() {
       );
     }
 
-    const allPrescriptionItems = Array.from(
-      prescriptionItemsByProductId.values(),
-    ).flat();
+    const allPrescriptionItems = Array.from(prescriptionItemsByProductId.values()).flat();
 
     const prescriptionIds = Array.from(
       new Set(
@@ -288,25 +273,21 @@ function MedicationPharmacyPage() {
     if (prescriptionIds.length > 0) {
       const { data: prescriptionRows, error: prescriptionError } = await supabase
         .from("prescriptions")
-        .select(`
+        .select(
+          `
           id,
           clinic_patient_id
-        `)
+        `,
+        )
         .in("id", prescriptionIds);
 
       if (prescriptionError) {
         console.error("Error loading prescriptions:", prescriptionError);
-        notify(
-          "Error",
-          prescriptionError.message || "No se pudieron cargar las prescripciones.",
-        );
+        notify("Error", prescriptionError.message || "No se pudieron cargar las prescripciones.");
       }
 
       prescriptionsById = new Map(
-        (prescriptionRows ?? []).map((prescription: any) => [
-          prescription.id,
-          prescription,
-        ]),
+        (prescriptionRows ?? []).map((prescription: any) => [prescription.id, prescription]),
       );
     }
 
@@ -321,29 +302,26 @@ function MedicationPharmacyPage() {
     let clinicPersonsById = new Map<string, any>();
 
     if (clinicPersonIds.length > 0) {
-      const { data: clinicPersonRows, error: clinicPersonError } =
-        await supabase
-          .from("clinic_persons")
-          .select(`
+      const { data: clinicPersonRows, error: clinicPersonError } = await supabase
+        .from("clinic_persons")
+        .select(
+          `
             id,
             person_id
-          `)
-          .in("id", clinicPersonIds);
+          `,
+        )
+        .in("id", clinicPersonIds);
 
       if (clinicPersonError) {
         console.error("Error loading clinic persons:", clinicPersonError);
         notify(
           "Error",
-          clinicPersonError.message ||
-            "No se pudieron cargar los pacientes clínicos.",
+          clinicPersonError.message || "No se pudieron cargar los pacientes clínicos.",
         );
       }
 
       clinicPersonsById = new Map(
-        (clinicPersonRows ?? []).map((clinicPerson: any) => [
-          clinicPerson.id,
-          clinicPerson,
-        ]),
+        (clinicPersonRows ?? []).map((clinicPerson: any) => [clinicPerson.id, clinicPerson]),
       );
     }
 
@@ -360,27 +338,24 @@ function MedicationPharmacyPage() {
     if (personIds.length > 0) {
       const { data: personRows, error: personError } = await supabase
         .from("persons")
-        .select(`
+        .select(
+          `
           id,
           first_name,
           last_name,
           document_number,
           phone,
           email
-        `)
+        `,
+        )
         .in("id", personIds);
 
       if (personError) {
         console.error("Error loading persons:", personError);
-        notify(
-          "Error",
-          personError.message || "No se pudieron cargar las personas.",
-        );
+        notify("Error", personError.message || "No se pudieron cargar las personas.");
       }
 
-      personsById = new Map(
-        (personRows ?? []).map((person: any) => [person.id, person]),
-      );
+      personsById = new Map((personRows ?? []).map((person: any) => [person.id, person]));
     }
 
     const prescriptionItemIds = Array.from(
@@ -396,7 +371,8 @@ function MedicationPharmacyPage() {
     if (prescriptionItemIds.length > 0) {
       const { data: preparedRows, error: preparedError } = await supabase
         .from("pharmacy_preparation_items")
-        .select(`
+        .select(
+          `
           id,
           prescription_item_id,
           lot_id,
@@ -406,14 +382,12 @@ function MedicationPharmacyPage() {
             id,
             status
           )
-        `)
+        `,
+        )
         .in("prescription_item_id", prescriptionItemIds);
 
       if (preparedError) {
-        console.error(
-          "Error loading existing pharmacy preparations:",
-          preparedError,
-        );
+        console.error("Error loading existing pharmacy preparations:", preparedError);
       }
 
       alreadyPreparedKeys = new Set(
@@ -421,9 +395,7 @@ function MedicationPharmacyPage() {
           .filter((row: any) => {
             const itemStatus = String(row.status ?? "").toUpperCase();
             const preparation = normalizeRelation(row.pharmacy_preparations);
-            const preparationStatus = String(
-              preparation?.status ?? "",
-            ).toUpperCase();
+            const preparationStatus = String(preparation?.status ?? "").toUpperCase();
 
             return (
               itemStatus !== "CANCELLED" &&
@@ -440,8 +412,7 @@ function MedicationPharmacyPage() {
         const product = normalizeRelation(lot.products);
         const location = normalizeRelation(lot.locations);
 
-        const prescriptionItems =
-          prescriptionItemsByProductId.get(lot.product_id) ?? [];
+        const prescriptionItems = prescriptionItemsByProductId.get(lot.product_id) ?? [];
 
         const notPreparedItems = prescriptionItems.filter((item: any) => {
           const key = `${item.id}-${lot.id}`;
@@ -472,11 +443,7 @@ function MedicationPharmacyPage() {
               productName: product?.name ?? "Producto sin nombre",
               productUnit: product?.unit_of_measure ?? "unit",
 
-              lotCode:
-                lot.manufacturer_lot ??
-                lot.internal_lot_code ??
-                lot.id ??
-                "Sin lote",
+              lotCode: lot.manufacturer_lot ?? lot.internal_lot_code ?? lot.id ?? "Sin lote",
 
               locationName: location?.name ?? "Ubicación no definida",
 
@@ -502,15 +469,11 @@ function MedicationPharmacyPage() {
         }
 
         return notPreparedItems.map((prescriptionItem: any): PharmacyPendingItem => {
-          const prescription = prescriptionsById.get(
-            prescriptionItem.prescription_id,
-          );
+          const prescription = prescriptionsById.get(prescriptionItem.prescription_id);
 
           const clinicPatientId = prescription?.clinic_patient_id ?? null;
 
-          const clinicPerson = clinicPatientId
-            ? clinicPersonsById.get(clinicPatientId)
-            : null;
+          const clinicPerson = clinicPatientId ? clinicPersonsById.get(clinicPatientId) : null;
 
           const clinicPersonId = clinicPerson?.id ?? clinicPatientId ?? null;
           const patientId = clinicPerson?.person_id ?? null;
@@ -519,14 +482,13 @@ function MedicationPharmacyPage() {
           const firstName = person?.first_name ?? "";
           const lastName = person?.last_name ?? "";
 
-          const patientName =
-            `${firstName} ${lastName}`.trim() || "Paciente sin nombre";
+          const patientName = `${firstName} ${lastName}`.trim() || "Paciente sin nombre";
 
           const hasFullPatientLink = Boolean(
             prescriptionItem.prescription_id &&
-              clinicPatientId &&
-              clinicPerson?.person_id &&
-              person,
+            clinicPatientId &&
+            clinicPerson?.person_id &&
+            person,
           );
 
           const quantityToPrepare = Number(
@@ -553,14 +515,9 @@ function MedicationPharmacyPage() {
             patientDocument: person?.document_number ?? null,
 
             productName: product?.name ?? "Producto sin nombre",
-            productUnit:
-              prescriptionItem.quantity_unit ?? product?.unit_of_measure ?? "unit",
+            productUnit: prescriptionItem.quantity_unit ?? product?.unit_of_measure ?? "unit",
 
-            lotCode:
-              lot.manufacturer_lot ??
-              lot.internal_lot_code ??
-              lot.id ??
-              "Sin lote",
+            lotCode: lot.manufacturer_lot ?? lot.internal_lot_code ?? lot.id ?? "Sin lote",
 
             locationName: location?.name ?? "Ubicación no definida",
 
@@ -671,10 +628,7 @@ function MedicationPharmacyPage() {
       console.error("Preparation payload:", preparationPayload);
       console.error("Error creating pharmacy preparation:", preparationError);
 
-      notify(
-        "Error",
-        preparationError.message || "No se pudo crear la preparación de farmacia.",
-      );
+      notify("Error", preparationError.message || "No se pudo crear la preparación de farmacia.");
 
       setSendingId(null);
       return;
@@ -702,20 +656,11 @@ function MedicationPharmacyPage() {
 
     if (preparationItemError) {
       console.error("Preparation item payload:", preparationItemPayload);
-      console.error(
-        "Error creating pharmacy preparation item:",
-        preparationItemError,
-      );
+      console.error("Error creating pharmacy preparation item:", preparationItemError);
 
-      await supabase
-        .from("pharmacy_preparations")
-        .delete()
-        .eq("id", preparationId);
+      await supabase.from("pharmacy_preparations").delete().eq("id", preparationId);
 
-      notify(
-        "Error",
-        preparationItemError.message || "No se pudo crear el ítem de preparación.",
-      );
+      notify("Error", preparationItemError.message || "No se pudo crear el ítem de preparación.");
 
       setSendingId(null);
       return;
@@ -729,10 +674,7 @@ function MedicationPharmacyPage() {
       .eq("id", item.prescriptionItemId);
 
     if (prescriptionItemError) {
-      console.error(
-        "Error updating prescription item inventory_status:",
-        prescriptionItemError,
-      );
+      console.error("Error updating prescription item inventory_status:", prescriptionItemError);
 
       notify(
         "Advertencia",
@@ -754,7 +696,8 @@ function MedicationPharmacyPage() {
 
     const { data, error } = await supabase
       .from("procedure_kit_orders")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         kit_id,
@@ -808,16 +751,14 @@ function MedicationPharmacyPage() {
             )
           )
         )
-      `)
+      `,
+      )
       .in("status", ["SENT_TO_PHARMACY", "PREPARED_BY_PHARMACY"])
       .order("sent_to_pharmacy_at", { ascending: false });
 
     if (error) {
       console.error("Error loading kit orders for pharmacy:", error);
-      notify(
-        "Error",
-        error.message || "No se pudieron cargar los kits enviados a farmacia.",
-      );
+      notify("Error", error.message || "No se pudieron cargar los kits enviados a farmacia.");
       setKitOrders([]);
       setLoadingKits(false);
       return;
@@ -826,18 +767,16 @@ function MedicationPharmacyPage() {
     const normalized = ((data ?? []) as any[]).map((order) => ({
       ...order,
       procedure_kits: normalizeRelation(order.procedure_kits),
-      procedure_kit_order_items: (order.procedure_kit_order_items ?? []).map(
-        (item: any) => ({
-          ...item,
-          products: normalizeRelation(item.products),
-          procedure_kit_order_item_lots: (
-            item.procedure_kit_order_item_lots ?? []
-          ).map((lotRow: any) => ({
+      procedure_kit_order_items: (order.procedure_kit_order_items ?? []).map((item: any) => ({
+        ...item,
+        products: normalizeRelation(item.products),
+        procedure_kit_order_item_lots: (item.procedure_kit_order_item_lots ?? []).map(
+          (lotRow: any) => ({
             ...lotRow,
             inventory_lots: normalizeRelation(lotRow.inventory_lots),
-          })),
-        }),
-      ),
+          }),
+        ),
+      })),
     }));
 
     setKitOrders(normalized as PharmacyKitOrder[]);
@@ -873,10 +812,7 @@ function MedicationPharmacyPage() {
 
         if (lotRowError) {
           console.error("Error preparing kit lot:", lotRowError);
-          notify(
-            "Error",
-            lotRowError.message || "No se pudo preparar un lote del kit.",
-          );
+          notify("Error", lotRowError.message || "No se pudo preparar un lote del kit.");
           setKitActionId(null);
           return;
         }
@@ -926,10 +862,7 @@ function MedicationPharmacyPage() {
 
     if (orderError) {
       console.error("Error marking kit order as prepared:", orderError);
-      notify(
-        "Error",
-        orderError.message || "No se pudo marcar el kit como preparado.",
-      );
+      notify("Error", orderError.message || "No se pudo marcar el kit como preparado.");
       setKitActionId(null);
       return;
     }
@@ -969,10 +902,7 @@ function MedicationPharmacyPage() {
 
         if (lotRowError) {
           console.error("Error delivering kit lot:", lotRowError);
-          notify(
-            "Error",
-            lotRowError.message || "No se pudo entregar un lote del kit.",
-          );
+          notify("Error", lotRowError.message || "No se pudo entregar un lote del kit.");
           setKitActionId(null);
           return;
         }
@@ -1024,10 +954,7 @@ function MedicationPharmacyPage() {
 
     if (orderError) {
       console.error("Error delivering kit order:", orderError);
-      notify(
-        "Error",
-        orderError.message || "No se pudo entregar el kit al procedimiento.",
-      );
+      notify("Error", orderError.message || "No se pudo entregar el kit al procedimiento.");
       setKitActionId(null);
       return;
     }
@@ -1062,8 +989,8 @@ function MedicationPharmacyPage() {
             </h3>
 
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Pharmacy solo prepara y envía medicamentos a Nursing. La decisión
-              de primera dosis presencial o manejo en casa se realiza en Nursing.
+              Pharmacy solo prepara y envía medicamentos a Nursing. La decisión de primera dosis
+              presencial o manejo en casa se realiza en Nursing.
             </p>
 
             <div className="flex items-center gap-2 mt-2 text-[10.5px] text-muted-foreground">
@@ -1113,9 +1040,7 @@ function MedicationPharmacyPage() {
                   className="p-5 hover:bg-accent/30 transition-colors grid grid-cols-12 gap-4 items-start"
                 >
                   <div className="col-span-3">
-                    <p className="text-[12px] font-semibold text-foreground">
-                      {item.patientName}
-                    </p>
+                    <p className="text-[12px] font-semibold text-foreground">{item.patientName}</p>
 
                     {item.patientDocument && (
                       <p className="text-[10.5px] text-muted-foreground">
@@ -1137,9 +1062,7 @@ function MedicationPharmacyPage() {
                   </div>
 
                   <div className="col-span-4">
-                    <p className="text-[12px] font-semibold text-foreground">
-                      {item.productName}
-                    </p>
+                    <p className="text-[12px] font-semibold text-foreground">{item.productName}</p>
 
                     <p className="text-[10.5px] text-muted-foreground mt-0.5">
                       Lote: <span className="font-mono">{item.lotCode}</span>
@@ -1159,17 +1082,13 @@ function MedicationPharmacyPage() {
                   </div>
 
                   <div className="col-span-2">
-                    <p className="text-[10px] text-muted-foreground">
-                      Cantidad preparada
-                    </p>
+                    <p className="text-[10px] text-muted-foreground">Cantidad preparada</p>
 
                     <p className="text-sm font-semibold text-foreground">
                       {item.quantity} {item.productUnit}
                     </p>
 
-                    <p className="text-[10px] text-muted-foreground mt-2">
-                      Reservado en lote
-                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-2">Reservado en lote</p>
 
                     <p className="text-[11px] text-muted-foreground">
                       {item.lotReserved} {item.productUnit}
@@ -1224,17 +1143,12 @@ function MedicationPharmacyPage() {
                       <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
                       <span>
                         Diagnóstico vínculo:{" "}
-                        <span className="font-mono">
-                          {JSON.stringify(item.diagnostic)}
-                        </span>
+                        <span className="font-mono">{JSON.stringify(item.diagnostic)}</span>
                       </span>
                     </div>
                   )}
 
-                  {item.canSendToNursing && (
-                    <div>
-                    </div>
-                  )}
+                  {item.canSendToNursing && <div></div>}
                 </div>
               );
             })}
@@ -1245,13 +1159,11 @@ function MedicationPharmacyPage() {
       <Card>
         <div className="p-4 border-b border-border flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">
-              Kits enviados a farmacia
-            </h3>
+            <h3 className="text-sm font-semibold text-foreground">Kits enviados a farmacia</h3>
 
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Órdenes de kits validadas y reservadas desde inventario para
-              alistamiento y entrega al procedimiento.
+              Órdenes de kits validadas y reservadas desde inventario para alistamiento y entrega al
+              procedimiento.
             </p>
           </div>
 
@@ -1299,8 +1211,7 @@ function MedicationPharmacyPage() {
                       </p>
 
                       <p className="text-[10.5px] text-muted-foreground mt-0.5">
-                        Procedimiento:{" "}
-                        {order.procedure_type ?? kit?.procedure_type ?? "-"}
+                        Procedimiento: {order.procedure_type ?? kit?.procedure_type ?? "-"}
                       </p>
 
                       <p className="text-[10.5px] text-muted-foreground">
@@ -1309,9 +1220,7 @@ function MedicationPharmacyPage() {
                     </div>
 
                     <div className="col-span-3">
-                      <p className="text-[10px] text-muted-foreground">
-                        Enviado a farmacia
-                      </p>
+                      <p className="text-[10px] text-muted-foreground">Enviado a farmacia</p>
 
                       <p className="text-[11px] text-foreground">
                         {formatDate(order.sent_to_pharmacy_at)}
@@ -1323,13 +1232,9 @@ function MedicationPharmacyPage() {
                     </div>
 
                     <div className="col-span-2">
-                      <p className="text-[10px] text-muted-foreground">
-                        Insumos
-                      </p>
+                      <p className="text-[10px] text-muted-foreground">Insumos</p>
 
-                      <p className="text-sm font-semibold text-foreground">
-                        {items.length}
-                      </p>
+                      <p className="text-sm font-semibold text-foreground">{items.length}</p>
                     </div>
 
                     <div className="col-span-3 flex justify-end gap-2">
@@ -1380,9 +1285,7 @@ function MedicationPharmacyPage() {
 
                               <p className="text-[10.5px] text-muted-foreground mt-0.5">
                                 Requerido: {Number(item.quantity_required ?? 0)}{" "}
-                                {item.unit_of_measure ??
-                                  product?.unit_of_measure ??
-                                  ""}
+                                {item.unit_of_measure ?? product?.unit_of_measure ?? ""}
                                 {" · "}
                                 Reservado: {Number(item.quantity_reserved ?? 0)}
                                 {" · "}
@@ -1416,14 +1319,11 @@ function MedicationPharmacyPage() {
                                     </p>
 
                                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                                      Reservado:{" "}
-                                      {Number(lotRow.quantity_reserved ?? 0)}
+                                      Reservado: {Number(lotRow.quantity_reserved ?? 0)}
                                       {" · "}
-                                      Preparado:{" "}
-                                      {Number(lotRow.quantity_prepared ?? 0)}
+                                      Preparado: {Number(lotRow.quantity_prepared ?? 0)}
                                       {" · "}
-                                      Entregado:{" "}
-                                      {Number(lotRow.quantity_delivered ?? 0)}
+                                      Entregado: {Number(lotRow.quantity_delivered ?? 0)}
                                     </p>
 
                                     {lot?.expiration_date && (

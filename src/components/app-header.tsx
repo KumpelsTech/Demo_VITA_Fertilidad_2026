@@ -21,7 +21,8 @@ const ROUTE_TITLES: Record<string, string> = {
 
 export function AppHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const title = ROUTE_TITLES[pathname] ?? (pathname.startsWith("/patients/") ? "Patient" : "Kumpels Core");
+  const title =
+    ROUTE_TITLES[pathname] ?? (pathname.startsWith("/patients/") ? "Patient" : "Kumpels Core");
 
   return (
     <header className="h-14 border-b border-border bg-card/80 backdrop-blur flex items-center justify-between px-5 sticky top-0 z-30 shrink-0">
@@ -36,8 +37,12 @@ export function AppHeader() {
       <div className="flex items-center gap-2">
         <div className="hidden md:flex items-center h-8 w-72 bg-secondary/60 hover:bg-secondary rounded-md px-2.5 transition-colors">
           <Search className="size-3.5 text-muted-foreground mr-2" />
-          <span className="text-[12px] text-muted-foreground flex-1">Search patients, protocols, lots…</span>
-          <kbd className="text-[9px] font-mono text-muted-foreground bg-card border border-border rounded px-1">⌘K</kbd>
+          <span className="text-[12px] text-muted-foreground flex-1">
+            Search patients, protocols, lots…
+          </span>
+          <kbd className="text-[9px] font-mono text-muted-foreground bg-card border border-border rounded px-1">
+            ⌘K
+          </kbd>
         </div>
         <button className="hidden sm:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[12px] font-medium text-primary bg-accent hover:bg-accent/80 transition-colors">
           <Sparkles className="size-3.5" /> Ask Kumpels

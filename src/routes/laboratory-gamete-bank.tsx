@@ -70,13 +70,7 @@ type NursingAdministration = {
   medication_id: string | null;
   lot_id: string | null;
   administration_mode: "ONSITE" | "HOME" | string | null;
-  status:
-    | "PENDING"
-    | "ADMINISTERED"
-    | "HOME_INSTRUCTIONS_DELIVERED"
-    | "CANCELLED"
-    | string
-    | null;
+  status: "PENDING" | "ADMINISTERED" | "HOME_INSTRUCTIONS_DELIVERED" | "CANCELLED" | string | null;
   scheduled_at: string | null;
   administered_at: string | null;
   administered_by: string | null;
@@ -106,26 +100,19 @@ type NursingInventoryLotOption = {
 
 function MedicationNursingPage() {
   const [preparations, setPreparations] = useState<NursingPreparation[]>([]);
-  const [selectedPreparation, setSelectedPreparation] =
-    useState<NursingPreparation | null>(null);
+  const [selectedPreparation, setSelectedPreparation] = useState<NursingPreparation | null>(null);
   const [loading, setLoading] = useState(false);
   const [workingId, setWorkingId] = useState<string | null>(null);
 
-  const [nursingNotesByItemId, setNursingNotesByItemId] = useState<
-    Record<string, string>
-  >({});
+  const [nursingNotesByItemId, setNursingNotesByItemId] = useState<Record<string, string>>({});
 
   const [availableLotsByMedicationId, setAvailableLotsByMedicationId] = useState<
     Record<string, NursingInventoryLotOption[]>
   >({});
 
-  const [selectedLotByItemId, setSelectedLotByItemId] = useState<
-    Record<string, string>
-  >({});
+  const [selectedLotByItemId, setSelectedLotByItemId] = useState<Record<string, string>>({});
 
-  const [discountQtyByItemId, setDiscountQtyByItemId] = useState<
-    Record<string, string>
-  >({});
+  const [discountQtyByItemId, setDiscountQtyByItemId] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadPreparations();
@@ -136,7 +123,8 @@ function MedicationNursingPage() {
 
     const { data, error } = await supabase
       .from("pharmacy_preparations")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         prescription_id,
@@ -173,7 +161,8 @@ function MedicationNursingPage() {
             expiration_date
           )
         )
-      `)
+      `,
+      )
       .in("status", ["SENT_TO_NURSING", "RECEIVED_BY_NURSING"])
       .order("sent_to_nursing_at", { ascending: false });
 
@@ -187,14 +176,14 @@ function MedicationNursingPage() {
 
     const normalizedPreparations = ((data ?? []) as any[]).map((preparation) => ({
       ...preparation,
-      pharmacy_preparation_items: (
-        preparation.pharmacy_preparation_items ?? []
-      ).map((item: any) => ({
-        ...item,
-        products: normalizeRelation(item.products),
-        inventory_lots: normalizeRelation(item.inventory_lots),
-        administrations: [],
-      })),
+      pharmacy_preparation_items: (preparation.pharmacy_preparation_items ?? []).map(
+        (item: any) => ({
+          ...item,
+          products: normalizeRelation(item.products),
+          inventory_lots: normalizeRelation(item.inventory_lots),
+          administrations: [],
+        }),
+      ),
     }));
 
     const itemIds = normalizedPreparations.flatMap((preparation: any) =>
@@ -204,10 +193,10 @@ function MedicationNursingPage() {
     let administrationsByItemId = new Map<string, NursingAdministration[]>();
 
     if (itemIds.length > 0) {
-      const { data: administrationRows, error: administrationError } =
-        await supabase
-          .from("nursing_medication_administrations")
-          .select(`
+      const { data: administrationRows, error: administrationError } = await supabase
+        .from("nursing_medication_administrations")
+        .select(
+          `
             id,
             pharmacy_preparation_item_id,
             prescription_item_id,
@@ -224,22 +213,17 @@ function MedicationNursingPage() {
             notes,
             created_at,
             updated_at
-          `)
-          .in("pharmacy_preparation_item_id", itemIds)
-          .order("created_at", { ascending: true });
+          `,
+        )
+        .in("pharmacy_preparation_item_id", itemIds)
+        .order("created_at", { ascending: true });
 
       if (administrationError) {
-        console.error(
-          "Error loading nursing medication administrations:",
-          administrationError,
-        );
+        console.error("Error loading nursing medication administrations:", administrationError);
       }
 
       administrationsByItemId = (administrationRows ?? []).reduce(
-        (
-          map: Map<string, NursingAdministration[]>,
-          administration: NursingAdministration,
-        ) => {
+        (map: Map<string, NursingAdministration[]>, administration: NursingAdministration) => {
           if (!administration.pharmacy_preparation_item_id) return map;
 
           const current = map.get(administration.pharmacy_preparation_item_id) ?? [];
@@ -255,12 +239,12 @@ function MedicationNursingPage() {
     const withAdministrations: NursingPreparation[] = normalizedPreparations.map(
       (preparation: any) => ({
         ...preparation,
-        pharmacy_preparation_items: (
-          preparation.pharmacy_preparation_items ?? []
-        ).map((item: any) => ({
-          ...item,
-          administrations: administrationsByItemId.get(item.id) ?? [],
-        })),
+        pharmacy_preparation_items: (preparation.pharmacy_preparation_items ?? []).map(
+          (item: any) => ({
+            ...item,
+            administrations: administrationsByItemId.get(item.id) ?? [],
+          }),
+        ),
       }),
     );
 
@@ -271,10 +255,7 @@ function MedicationNursingPage() {
     setSelectedPreparation((current) => {
       if (!current) return null;
 
-      return (
-        withAdministrations.find((preparation) => preparation.id === current.id) ??
-        null
-      );
+      return withAdministrations.find((preparation) => preparation.id === current.id) ?? null;
     });
 
     setLoading(false);
@@ -297,7 +278,8 @@ function MedicationNursingPage() {
 
     const { data, error } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         product_id,
@@ -314,7 +296,8 @@ function MedicationNursingPage() {
           id,
           name
         )
-      `)
+      `,
+      )
       .in("product_id", medicationIds)
       .order("expiration_date", { ascending: true });
 
@@ -332,13 +315,7 @@ function MedicationNursingPage() {
       .filter((lot) => {
         const status = String(lot.status ?? "").toLowerCase();
 
-        const blockedStatuses = [
-          "expired",
-          "blocked",
-          "quarantined",
-          "destroyed",
-          "consumed",
-        ];
+        const blockedStatuses = ["expired", "blocked", "quarantined", "destroyed", "consumed"];
 
         const totalUsable =
           Number(lot.quantity_available ?? 0) + Number(lot.quantity_reserved ?? 0);
@@ -346,30 +323,27 @@ function MedicationNursingPage() {
         return !blockedStatuses.includes(status) && totalUsable > 0;
       }) as NursingInventoryLotOption[];
 
-    const grouped = usableLots.reduce(
-      (map: Record<string, NursingInventoryLotOption[]>, lot) => {
-        if (!lot.product_id) return map;
+    const grouped = usableLots.reduce((map: Record<string, NursingInventoryLotOption[]>, lot) => {
+      if (!lot.product_id) return map;
 
-        const current = map[lot.product_id] ?? [];
-        current.push(lot);
+      const current = map[lot.product_id] ?? [];
+      current.push(lot);
 
-        current.sort((a, b) => {
-          const expA = a.expiration_date
-            ? new Date(a.expiration_date).getTime()
-            : Number.MAX_SAFE_INTEGER;
+      current.sort((a, b) => {
+        const expA = a.expiration_date
+          ? new Date(a.expiration_date).getTime()
+          : Number.MAX_SAFE_INTEGER;
 
-          const expB = b.expiration_date
-            ? new Date(b.expiration_date).getTime()
-            : Number.MAX_SAFE_INTEGER;
+        const expB = b.expiration_date
+          ? new Date(b.expiration_date).getTime()
+          : Number.MAX_SAFE_INTEGER;
 
-          return expA - expB;
-        });
+        return expA - expB;
+      });
 
-        map[lot.product_id] = current;
-        return map;
-      },
-      {},
-    );
+      map[lot.product_id] = current;
+      return map;
+    }, {});
 
     setAvailableLotsByMedicationId(grouped);
 
@@ -482,9 +456,7 @@ function MedicationNursingPage() {
       return null;
     }
 
-    const requestedQuantity = Number(
-      discountQtyByItemId[item.id] || fallbackQuantity || 0,
-    );
+    const requestedQuantity = Number(discountQtyByItemId[item.id] || fallbackQuantity || 0);
 
     if (!requestedQuantity || requestedQuantity <= 0) {
       runMockAction("Selecting medication quantity", {
@@ -496,7 +468,8 @@ function MedicationNursingPage() {
 
     const { data: lot, error: lotError } = await supabase
       .from("inventory_lots")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         product_id,
@@ -505,7 +478,8 @@ function MedicationNursingPage() {
         quantity_reserved,
         quantity_consumed,
         status
-      `)
+      `,
+      )
       .eq("id", selectedLotId)
       .single();
 
@@ -540,8 +514,7 @@ function MedicationNursingPage() {
     const newAvailable = Math.max(currentAvailable - availableToDiscount, 0);
     const newConsumed = currentConsumed + requestedQuantity;
 
-    const newStatus =
-      newAvailable > 0 ? "available" : newReserved > 0 ? "reserved" : "consumed";
+    const newStatus = newAvailable > 0 ? "available" : newReserved > 0 ? "reserved" : "consumed";
 
     const now = timestampWithoutTimezone(new Date());
 
@@ -565,25 +538,23 @@ function MedicationNursingPage() {
       return null;
     }
 
-    const { error: movementError } = await supabase
-      .from("inventory_movements")
-      .insert({
-        id: crypto.randomUUID(),
-        clinic_id: preparation.clinic_id,
-        lot_id: selectedLotId,
-        inventory_reservation_id: null,
-        movement_type: "consumed",
-        source_location_id: lot.location_id ?? null,
-        destination_location_id: null,
-        quantity: requestedQuantity,
-        related_case_id: null,
-        related_patient_id: preparation.patient_id,
-        related_procedure_id: null,
-        related_prescription_item_id: item.prescription_item_id,
-        performed_by: null,
-        reason,
-        created_at: now,
-      });
+    const { error: movementError } = await supabase.from("inventory_movements").insert({
+      id: crypto.randomUUID(),
+      clinic_id: preparation.clinic_id,
+      lot_id: selectedLotId,
+      inventory_reservation_id: null,
+      movement_type: "consumed",
+      source_location_id: lot.location_id ?? null,
+      destination_location_id: null,
+      quantity: requestedQuantity,
+      related_case_id: null,
+      related_patient_id: preparation.patient_id,
+      related_procedure_id: null,
+      related_prescription_item_id: item.prescription_item_id,
+      performed_by: null,
+      reason,
+      created_at: now,
+    });
 
     if (movementError) {
       console.error("Inventory movement was not created:", movementError);
@@ -607,10 +578,7 @@ function MedicationNursingPage() {
     };
   }
 
-  async function planHomeOnly(
-    preparation: NursingPreparation,
-    item: NursingPreparationItem,
-  ) {
+  async function planHomeOnly(preparation: NursingPreparation, item: NursingPreparationItem) {
     const now = timestampWithoutTimezone(new Date());
     const notes = nursingNotesByItemId[item.id]?.trim() || null;
 
@@ -630,8 +598,7 @@ function MedicationNursingPage() {
 
     const existingHome = (item.administrations ?? []).find(
       (administration) =>
-        administration.administration_mode === "HOME" &&
-        administration.status !== "CANCELLED",
+        administration.administration_mode === "HOME" && administration.status !== "CANCELLED",
     );
 
     if (!existingHome) {
@@ -651,9 +618,7 @@ function MedicationNursingPage() {
           scheduled_at: null,
           administered_at: null,
           administered_by: null,
-          notes:
-            notes ??
-            `Manejo completo en casa. Cantidad descontada: ${discount.quantity}.`,
+          notes: notes ?? `Manejo completo en casa. Cantidad descontada: ${discount.quantity}.`,
           created_at: now,
           updated_at: now,
         });
@@ -722,8 +687,7 @@ function MedicationNursingPage() {
 
     const existingOnsite = (item.administrations ?? []).find(
       (administration) =>
-        administration.administration_mode === "ONSITE" &&
-        administration.status !== "CANCELLED",
+        administration.administration_mode === "ONSITE" && administration.status !== "CANCELLED",
     );
 
     if (!existingOnsite) {
@@ -743,9 +707,7 @@ function MedicationNursingPage() {
           scheduled_at: null,
           administered_at: null,
           administered_by: null,
-          notes:
-            notes ??
-            "Primera dosis pendiente de administración presencial en Nursing.",
+          notes: notes ?? "Primera dosis pendiente de administración presencial en Nursing.",
           created_at: now,
           updated_at: now,
         });
@@ -800,8 +762,7 @@ function MedicationNursingPage() {
   ) {
     const onsiteAdministration = (item.administrations ?? []).find(
       (administration) =>
-        administration.administration_mode === "ONSITE" &&
-        administration.status === "PENDING",
+        administration.administration_mode === "ONSITE" && administration.status === "PENDING",
     );
 
     if (!onsiteAdministration) {
@@ -901,8 +862,7 @@ function MedicationNursingPage() {
 
     const existingHome = (item.administrations ?? []).find(
       (administration) =>
-        administration.administration_mode === "HOME" &&
-        administration.status !== "CANCELLED",
+        administration.administration_mode === "HOME" && administration.status !== "CANCELLED",
     );
 
     if (!existingHome) {
@@ -992,17 +952,13 @@ function MedicationNursingPage() {
     <div className="p-6 lg:p-8 max-w-[1400px] mx-auto space-y-6">
       <header className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Nursing
-          </p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Nursing</p>
 
-          <h1 className="text-xl font-semibold tracking-tight">
-            Medication handoff
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight">Medication handoff</h1>
 
           <p className="text-[12px] text-muted-foreground mt-1">
-            Recibe medicamentos preparados por Pharmacy, selecciona el lote real
-            de salida y define si el manejo es presencial o en casa.
+            Recibe medicamentos preparados por Pharmacy, selecciona el lote real de salida y define
+            si el manejo es presencial o en casa.
           </p>
         </div>
 
@@ -1023,24 +979,19 @@ function MedicationNursingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section className="lg:col-span-1 rounded-xl border border-border bg-card">
           <div className="p-4 border-b border-border">
-            <h2 className="text-[14px] font-semibold">
-              Preparaciones desde Pharmacy
-            </h2>
+            <h2 className="text-[14px] font-semibold">Preparaciones desde Pharmacy</h2>
           </div>
 
           <div className="divide-y divide-border">
             {loading ? (
-              <div className="p-4 text-[12px] text-muted-foreground">
-                Cargando preparaciones...
-              </div>
+              <div className="p-4 text-[12px] text-muted-foreground">Cargando preparaciones...</div>
             ) : preparations.length === 0 ? (
               <div className="p-4 text-[12px] text-muted-foreground">
                 No hay preparaciones pendientes.
               </div>
             ) : (
               preparations.map((preparation) => {
-                const itemCount =
-                  preparation.pharmacy_preparation_items?.length ?? 0;
+                const itemCount = preparation.pharmacy_preparation_items?.length ?? 0;
 
                 return (
                   <button
@@ -1083,13 +1034,11 @@ function MedicationNursingPage() {
             <div className="h-full min-h-[360px] flex flex-col items-center justify-center text-center text-muted-foreground">
               <ClipboardList className="size-10 mb-3" />
 
-              <p className="text-[13px] font-medium">
-                Selecciona una preparación
-              </p>
+              <p className="text-[13px] font-medium">Selecciona una preparación</p>
 
               <p className="text-[11px] mt-1 max-w-sm">
-                Escoge una preparación enviada por Pharmacy para confirmar
-                recibo, seleccionar lote y definir el plan de administración.
+                Escoge una preparación enviada por Pharmacy para confirmar recibo, seleccionar lote
+                y definir el plan de administración.
               </p>
             </div>
           ) : (
@@ -1100,17 +1049,15 @@ function MedicationNursingPage() {
                     Preparación seleccionada
                   </p>
 
-                  <h2 className="text-[16px] font-semibold mt-1">
-                    {selectedPreparation.id}
-                  </h2>
+                  <h2 className="text-[16px] font-semibold mt-1">{selectedPreparation.id}</h2>
 
                   <p className="text-[11px] text-muted-foreground mt-1">
                     Prescription: {selectedPreparation.prescription_id ?? "-"}
                   </p>
 
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Medicamentos: {selectedSummary.total} · Recibidos:{" "}
-                    {selectedSummary.received} · Cerrados: {selectedSummary.closed}
+                    Medicamentos: {selectedSummary.total} · Recibidos: {selectedSummary.received} ·
+                    Cerrados: {selectedSummary.closed}
                   </p>
                 </div>
 
@@ -1154,9 +1101,7 @@ function MedicationNursingPage() {
                     onPlanHomeOnly={planHomeOnly}
                     onPlanFirstDoseOnsite={planFirstDoseOnsite}
                     onMarkFirstDoseAdministered={markFirstDoseAdministered}
-                    onConfirmRemainingHomeInstructions={
-                      confirmRemainingHomeInstructions
-                    }
+                    onConfirmRemainingHomeInstructions={confirmRemainingHomeInstructions}
                   />
                 ))}
               </div>
@@ -1188,22 +1133,13 @@ function MedicationItemCard({
   item: NursingPreparationItem;
   workingId: string | null;
   nursingNotesByItemId: Record<string, string>;
-  setNursingNotesByItemId: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
+  setNursingNotesByItemId: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   availableLotsByMedicationId: Record<string, NursingInventoryLotOption[]>;
   selectedLotByItemId: Record<string, string>;
-  setSelectedLotByItemId: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
+  setSelectedLotByItemId: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   discountQtyByItemId: Record<string, string>;
-  setDiscountQtyByItemId: React.Dispatch<
-    React.SetStateAction<Record<string, string>>
-  >;
-  onPlanHomeOnly: (
-    preparation: NursingPreparation,
-    item: NursingPreparationItem,
-  ) => Promise<void>;
+  setDiscountQtyByItemId: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  onPlanHomeOnly: (preparation: NursingPreparation, item: NursingPreparationItem) => Promise<void>;
   onPlanFirstDoseOnsite: (
     preparation: NursingPreparation,
     item: NursingPreparationItem,
@@ -1228,20 +1164,17 @@ function MedicationItemCard({
 
   const onsiteAdministration = (item.administrations ?? []).find(
     (administration) =>
-      administration.administration_mode === "ONSITE" &&
-      administration.status !== "CANCELLED",
+      administration.administration_mode === "ONSITE" && administration.status !== "CANCELLED",
   );
 
   const pendingOnsiteAdministration = (item.administrations ?? []).find(
     (administration) =>
-      administration.administration_mode === "ONSITE" &&
-      administration.status === "PENDING",
+      administration.administration_mode === "ONSITE" && administration.status === "PENDING",
   );
 
   const administeredOnsiteAdministration = (item.administrations ?? []).find(
     (administration) =>
-      administration.administration_mode === "ONSITE" &&
-      administration.status === "ADMINISTERED",
+      administration.administration_mode === "ONSITE" && administration.status === "ADMINISTERED",
   );
 
   const homeAdministration = (item.administrations ?? []).find(
@@ -1254,7 +1187,7 @@ function MedicationItemCard({
   const isWorking = workingId === item.id;
 
   const availableLots = item.medication_id
-    ? availableLotsByMedicationId[item.medication_id] ?? []
+    ? (availableLotsByMedicationId[item.medication_id] ?? [])
     : [];
 
   const selectedLotId = selectedLotByItemId[item.id] ?? "";
@@ -1263,13 +1196,9 @@ function MedicationItemCard({
 
   const fifoLot =
     [...availableLots].sort((a, b) => {
-      const receivedA = a.received_at
-        ? new Date(a.received_at).getTime()
-        : Number.MAX_SAFE_INTEGER;
+      const receivedA = a.received_at ? new Date(a.received_at).getTime() : Number.MAX_SAFE_INTEGER;
 
-      const receivedB = b.received_at
-        ? new Date(b.received_at).getTime()
-        : Number.MAX_SAFE_INTEGER;
+      const receivedB = b.received_at ? new Date(b.received_at).getTime() : Number.MAX_SAFE_INTEGER;
 
       return receivedA - receivedB;
     })[0] ?? null;
@@ -1287,14 +1216,11 @@ function MedicationItemCard({
               <ShieldCheck className="size-4 text-muted-foreground" />
             )}
 
-            <p className="text-[13px] font-semibold">
-              {product?.name ?? "Medicamento"}
-            </p>
+            <p className="text-[13px] font-semibold">{product?.name ?? "Medicamento"}</p>
           </div>
 
           <p className="text-[11px] text-muted-foreground mt-1">
-            Lote original Pharmacy:{" "}
-            {lot?.manufacturer_lot ?? lot?.internal_lot_code ?? "-"}
+            Lote original Pharmacy: {lot?.manufacturer_lot ?? lot?.internal_lot_code ?? "-"}
             {" · "}
             Cantidad recibida: {Number(item.quantity_received ?? 0)}
             {" / "}
@@ -1323,9 +1249,7 @@ function MedicationItemCard({
         <div className="mt-4 rounded-lg border border-border bg-card p-3 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[12px] font-semibold text-foreground">
-                Lote para descontar
-              </p>
+              <p className="text-[12px] font-semibold text-foreground">Lote para descontar</p>
 
               <p className="text-[10.5px] text-muted-foreground mt-0.5">
                 El sistema recomienda FEFO/FIFO, pero Nursing puede escoger otro lote.
@@ -1395,13 +1319,9 @@ function MedicationItemCard({
                     <option key={lotOption.id} value={lotOption.id}>
                       {code}
                       {tags ? ` · ${tags}` : ""}
-                      {lotOption.expiration_date
-                        ? ` · vence ${lotOption.expiration_date}`
-                        : ""}
+                      {lotOption.expiration_date ? ` · vence ${lotOption.expiration_date}` : ""}
                       {` · disp ${available} · res ${reserved}`}
-                      {lotOption.locations?.name
-                        ? ` · ${lotOption.locations.name}`
-                        : ""}
+                      {lotOption.locations?.name ? ` · ${lotOption.locations.name}` : ""}
                     </option>
                   );
                 })}
@@ -1423,9 +1343,7 @@ function MedicationItemCard({
                     [item.id]: event.target.value,
                   }))
                 }
-                placeholder={`${Number(
-                  item.quantity_received ?? item.quantity_prepared ?? 0,
-                )}`}
+                placeholder={`${Number(item.quantity_received ?? item.quantity_prepared ?? 0)}`}
                 className="mt-1 w-full h-9 rounded-md border border-border bg-card px-3 text-[11px] outline-none focus:ring-2 focus:ring-primary/20"
               />
             </label>
@@ -1488,12 +1406,10 @@ function MedicationItemCard({
       {pendingOnsiteAdministration && (
         <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[12px] font-semibold text-foreground">
-              Primera dosis pendiente
-            </p>
+            <p className="text-[12px] font-semibold text-foreground">Primera dosis pendiente</p>
             <p className="text-[10.5px] text-muted-foreground mt-0.5">
-              Administra la primera dosis presencial y luego confirma el manejo en
-              casa para el resto del tratamiento.
+              Administra la primera dosis presencial y luego confirma el manejo en casa para el
+              resto del tratamiento.
             </p>
           </div>
 
@@ -1515,12 +1431,9 @@ function MedicationItemCard({
       {administeredOnsiteAdministration && !isClosedHome && (
         <div className="mt-4 rounded-lg border border-success/20 bg-success/5 p-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-[12px] font-semibold text-foreground">
-              Primera dosis administrada
-            </p>
+            <p className="text-[12px] font-semibold text-foreground">Primera dosis administrada</p>
             <p className="text-[10.5px] text-muted-foreground mt-0.5">
-              Falta confirmar instrucciones para continuar el resto del tratamiento
-              en casa.
+              Falta confirmar instrucciones para continuar el resto del tratamiento en casa.
             </p>
           </div>
 
@@ -1541,9 +1454,7 @@ function MedicationItemCard({
 
       {isClosedHome && (
         <div className="mt-4 rounded-lg border border-success/20 bg-success/5 p-3">
-          <p className="text-[12px] font-semibold text-foreground">
-            Manejo en casa confirmado
-          </p>
+          <p className="text-[12px] font-semibold text-foreground">Manejo en casa confirmado</p>
 
           <p className="text-[10.5px] text-muted-foreground mt-0.5">
             {administeredOnsiteAdministration
@@ -1555,9 +1466,7 @@ function MedicationItemCard({
 
       {(item.administrations ?? []).length > 0 && (
         <div className="mt-4 border-t border-border pt-3">
-          <p className="text-[10.5px] font-medium text-muted-foreground mb-2">
-            Registro Nursing
-          </p>
+          <p className="text-[10.5px] font-medium text-muted-foreground mb-2">Registro Nursing</p>
 
           <div className="space-y-1">
             {(item.administrations ?? []).map((administration) => (
@@ -1566,8 +1475,7 @@ function MedicationItemCard({
                 className="flex items-center justify-between gap-3 text-[10.5px] bg-card border border-border rounded-md px-2 py-1"
               >
                 <span>
-                  {administration.administration_mode ?? "-"} ·{" "}
-                  {administration.status ?? "-"}
+                  {administration.administration_mode ?? "-"} · {administration.status ?? "-"}
                 </span>
 
                 <span className="text-muted-foreground">
@@ -1629,9 +1537,7 @@ function StatusPill({ status }: { status: string }) {
     normalized === "HOME_DELIVERED" ||
     normalized === "HOME_INSTRUCTIONS_DELIVERED"
       ? "success"
-      : normalized === "SENT_TO_NURSING" ||
-          normalized === "PREPARED" ||
-          normalized === "PENDING"
+      : normalized === "SENT_TO_NURSING" || normalized === "PREPARED" || normalized === "PENDING"
         ? "primary"
         : normalized === "CANCELLED" || normalized === "REJECTED"
           ? "critical"

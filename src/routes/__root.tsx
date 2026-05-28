@@ -77,10 +77,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Kumpels Core — Fertility Operations Platform" },
-      { name: "description", content: "Modern workflow-driven clinical operations platform for fertility clinics." },
+      {
+        name: "description",
+        content: "Modern workflow-driven clinical operations platform for fertility clinics.",
+      },
       { name: "author", content: "Kumpels" },
       { property: "og:title", content: "Kumpels Core" },
-      { property: "og:description", content: "Modern workflow-driven clinical operations platform for fertility clinics." },
+      {
+        property: "og:description",
+        content: "Modern workflow-driven clinical operations platform for fertility clinics.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

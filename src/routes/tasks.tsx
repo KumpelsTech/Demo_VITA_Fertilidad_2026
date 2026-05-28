@@ -1,13 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Plus,
-  CheckCircle,
-  Loader2,
-  AlertCircle,
-  Search,
-  RefreshCw,
-} from "lucide-react";
+import { Plus, CheckCircle, Loader2, AlertCircle, Search, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { notify } from "@/lib/mock-actions";
 import { supabase } from "@/lib/supabase";
@@ -128,8 +121,7 @@ function getPriorityClass(priority: string) {
     priority === "high" && "bg-warning/10 text-warning",
     priority === "medium" && "bg-clinical/10 text-clinical",
     priority === "normal" && "bg-muted text-muted-foreground",
-    !["urgent", "high", "medium", "normal"].includes(priority) &&
-      "bg-muted text-muted-foreground",
+    !["urgent", "high", "medium", "normal"].includes(priority) && "bg-muted text-muted-foreground",
   );
 }
 
@@ -166,7 +158,8 @@ function TasksPage() {
 
     const { data: taskRows, error: taskError } = await supabase
       .from("follow_up_tasks")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         fertility_case_id,
@@ -178,7 +171,8 @@ function TasksPage() {
         completed_at,
         notes,
         clinic_person_id
-      `)
+      `,
+      )
       .order("due_at", { ascending: true, nullsFirst: false });
 
     if (taskError) {
@@ -189,11 +183,7 @@ function TasksPage() {
     }
 
     const clinicPersonIds = Array.from(
-      new Set(
-        (taskRows ?? [])
-          .map((task) => task.clinic_person_id)
-          .filter(Boolean) as string[],
-      ),
+      new Set((taskRows ?? []).map((task) => task.clinic_person_id).filter(Boolean) as string[]),
     );
 
     let clinicPersonsById = new Map<string, ClinicPersonRow>();
@@ -201,7 +191,8 @@ function TasksPage() {
     if (clinicPersonIds.length > 0) {
       const { data: clinicPersonRows, error: clinicPersonError } = await supabase
         .from("clinic_persons")
-        .select(`
+        .select(
+          `
           id,
           person_id,
           persons (
@@ -212,18 +203,13 @@ function TasksPage() {
             email,
             document_number
           )
-        `)
+        `,
+        )
         .in("id", clinicPersonIds);
 
       if (clinicPersonError) {
-        console.error(
-          "Error loading clinic persons:",
-          JSON.stringify(clinicPersonError, null, 2),
-        );
-        notify(
-          "Error",
-          clinicPersonError.message || "No se pudieron cargar los pacientes.",
-        );
+        console.error("Error loading clinic persons:", JSON.stringify(clinicPersonError, null, 2));
+        notify("Error", clinicPersonError.message || "No se pudieron cargar los pacientes.");
       }
 
       clinicPersonsById = new Map(
@@ -359,9 +345,7 @@ function TasksPage() {
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight">
-            Tasks & Follow-up
-          </h1>
+          <h1 className="text-lg font-semibold tracking-tight">Tasks & Follow-up</h1>
 
           <p className="text-sm text-muted-foreground mt-1">
             Seguimiento operativo de tareas creadas en follow_up_tasks
@@ -401,11 +385,7 @@ function TasksPage() {
             disabled={creating}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg py-2 px-4 hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            {creating ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Plus className="size-4" />
-            )}
+            {creating ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             New Task
           </button>
         </div>
@@ -478,8 +458,7 @@ function TasksPage() {
                     </p>
 
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {task.patientName} &bull; {task.assignee} &bull; Due{" "}
-                      {task.due}
+                      {task.patientName} &bull; {task.assignee} &bull; Due {task.due}
                     </p>
 
                     <div className="flex items-center gap-2 mt-1">
@@ -498,9 +477,7 @@ function TasksPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={getPriorityClass(task.priority)}>
-                      {task.priority}
-                    </span>
+                    <span className={getPriorityClass(task.priority)}>{task.priority}</span>
 
                     <span
                       className={cn(

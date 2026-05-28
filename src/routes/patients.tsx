@@ -1,14 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  Filter,
-  Plus,
-  ChevronRight,
-  X,
-  Loader2,
-  UserPlus,
-} from "lucide-react";
+import { Search, Filter, Plus, ChevronRight, X, Loader2, UserPlus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -164,9 +156,7 @@ function PatientsPage() {
       created_at: now,
     };
 
-    const { error: personError } = await supabase
-      .from("persons")
-      .insert(personPayload);
+    const { error: personError } = await supabase.from("persons").insert(personPayload);
 
     if (personError) {
       console.error("ERROR CREATING PERSON", personError);
@@ -175,18 +165,16 @@ function PatientsPage() {
       return;
     }
 
-    const { error: clinicPersonError } = await supabase
-      .from("clinic_persons")
-      .insert({
-        id: clinicPatientId,
-        clinic_id: DEFAULT_CLINIC_ID,
-        person_id: personId,
-        internal_patient_code: generateInternalPatientCode(),
-        status: "ACTIVE",
-        first_visit_at: null,
-        last_visit_at: null,
-        created_at: now,
-      });
+    const { error: clinicPersonError } = await supabase.from("clinic_persons").insert({
+      id: clinicPatientId,
+      clinic_id: DEFAULT_CLINIC_ID,
+      person_id: personId,
+      internal_patient_code: generateInternalPatientCode(),
+      status: "ACTIVE",
+      first_visit_at: null,
+      last_visit_at: null,
+      created_at: now,
+    });
 
     if (clinicPersonError) {
       console.error("ERROR CREATING CLINIC PERSON LINK", clinicPersonError);
@@ -209,9 +197,7 @@ function PatientsPage() {
 
   const filteredPatients = useMemo(() => {
     return patients.filter((patient) => {
-      const fullName = `${patient.first_name ?? ""} ${
-        patient.last_name ?? ""
-      }`.toLowerCase();
+      const fullName = `${patient.first_name ?? ""} ${patient.last_name ?? ""}`.toLowerCase();
 
       return (
         fullName.includes(q.toLowerCase()) ||
@@ -231,10 +217,7 @@ function PatientsPage() {
 
     const monthDiff = today.getMonth() - birth.getMonth();
 
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birth.getDate())
-    ) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
 
@@ -297,25 +280,15 @@ function PatientsPage() {
           <table className="w-full text-left text-[12px]">
             <thead>
               <tr className="border-b border-border bg-secondary/40 text-[11px] uppercase tracking-wider">
-                <th className="py-2.5 px-4 font-medium text-muted-foreground">
-                  Patient
-                </th>
+                <th className="py-2.5 px-4 font-medium text-muted-foreground">Patient</th>
 
-                <th className="py-2.5 px-4 font-medium text-muted-foreground">
-                  Document
-                </th>
+                <th className="py-2.5 px-4 font-medium text-muted-foreground">Document</th>
 
-                <th className="py-2.5 px-4 font-medium text-muted-foreground">
-                  Gender
-                </th>
+                <th className="py-2.5 px-4 font-medium text-muted-foreground">Gender</th>
 
-                <th className="py-2.5 px-4 font-medium text-muted-foreground">
-                  Phone
-                </th>
+                <th className="py-2.5 px-4 font-medium text-muted-foreground">Phone</th>
 
-                <th className="py-2.5 px-4 font-medium text-muted-foreground">
-                  Email
-                </th>
+                <th className="py-2.5 px-4 font-medium text-muted-foreground">Email</th>
 
                 <th className="py-3 px-4 font-semibold text-muted-foreground"></th>
               </tr>
@@ -324,10 +297,7 @@ function PatientsPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="py-8 text-center text-muted-foreground"
-                  >
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
                     Loading patients...
                   </td>
                 </tr>
@@ -335,10 +305,7 @@ function PatientsPage() {
 
               {!loading && filteredPatients.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="py-8 text-center text-muted-foreground"
-                  >
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
                     No patients found
                   </td>
                 </tr>
@@ -346,9 +313,7 @@ function PatientsPage() {
 
               {!loading &&
                 filteredPatients.map((patient) => {
-                  const fullName = `${patient.first_name ?? ""} ${
-                    patient.last_name ?? ""
-                  }`.trim();
+                  const fullName = `${patient.first_name ?? ""} ${patient.last_name ?? ""}`.trim();
 
                   const initials = fullName
                     .split(" ")
@@ -357,8 +322,7 @@ function PatientsPage() {
                     .slice(0, 2)
                     .join("");
 
-                  const birthDate =
-                    patient.birth_date ?? patient.date_of_birth ?? null;
+                  const birthDate = patient.birth_date ?? patient.date_of_birth ?? null;
 
                   return (
                     <tr
@@ -391,8 +355,7 @@ function PatientsPage() {
 
                       <td className="py-2.5 px-4">
                         <span className="text-muted-foreground">
-                          {patient.document_type ?? "-"} ·{" "}
-                          {patient.document_number ?? "-"}
+                          {patient.document_type ?? "-"} · {patient.document_number ?? "-"}
                         </span>
                       </td>
 
@@ -407,13 +370,9 @@ function PatientsPage() {
                         </span>
                       </td>
 
-                      <td className="py-2.5 px-4 text-muted-foreground">
-                        {patient.phone ?? "-"}
-                      </td>
+                      <td className="py-2.5 px-4 text-muted-foreground">{patient.phone ?? "-"}</td>
 
-                      <td className="py-2.5 px-4 text-muted-foreground">
-                        {patient.email ?? "-"}
-                      </td>
+                      <td className="py-2.5 px-4 text-muted-foreground">{patient.email ?? "-"}</td>
 
                       <td className="py-2.5 px-4 text-right">
                         <ChevronRight className="size-4 text-muted-foreground group-hover:text-primary transition-colors inline-block" />
@@ -567,9 +526,7 @@ function NewPatientPanel({
         </label>
 
         <label className="block">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Gender
-          </span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Gender</span>
 
           <select
             value={form.gender}
@@ -613,9 +570,7 @@ function NewPatientPanel({
         </label>
 
         <label className="block">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Phone
-          </span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Phone</span>
 
           <input
             value={form.phone}
@@ -631,9 +586,7 @@ function NewPatientPanel({
         </label>
 
         <label className="block">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Email
-          </span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Email</span>
 
           <input
             type="email"
@@ -664,11 +617,7 @@ function NewPatientPanel({
           disabled={creating}
           className="text-[12px] px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1.5"
         >
-          {creating ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Plus className="size-3.5" />
-          )}
+          {creating ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
           Create patient
         </button>
       </div>

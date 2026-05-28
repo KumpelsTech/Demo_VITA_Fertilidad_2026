@@ -93,15 +93,21 @@ export function AppSidebar() {
             <span className="text-primary-foreground font-bold text-[13px] tracking-tight">K</span>
           </div>
           <div className={cn("flex flex-col leading-none", collapsed && "sr-only")}>
-            <span className="font-semibold text-[13px] tracking-tight text-foreground">Kumpels</span>
-            <span className="text-[10px] text-muted-foreground tracking-wide">Core · VITA Fertility</span>
+            <span className="font-semibold text-[13px] tracking-tight text-foreground">
+              Kumpels
+            </span>
+            <span className="text-[10px] text-muted-foreground tracking-wide">
+              Core · VITA Fertility
+            </span>
           </div>
         </Link>
         {!collapsed && (
           <div className="mt-4 flex items-center h-8 px-2.5 bg-secondary/70 rounded-md border border-transparent hover:border-border transition-colors">
             <Search className="size-3.5 text-muted-foreground mr-2" />
             <span className="text-[11px] text-muted-foreground flex-1">Quick find</span>
-            <kbd className="text-[9px] font-mono text-muted-foreground bg-card border border-border rounded px-1">⌘K</kbd>
+            <kbd className="text-[9px] font-mono text-muted-foreground bg-card border border-border rounded px-1">
+              ⌘K
+            </kbd>
           </div>
         )}
       </SidebarHeader>
@@ -109,10 +115,12 @@ export function AppSidebar() {
       <SidebarContent className="px-2 gap-1">
         {navGroups.map((group) => (
           <SidebarGroup key={group.label} className="py-1">
-            <SidebarGroupLabel className={cn(
-              "text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 px-3",
-              collapsed && "sr-only"
-            )}>
+            <SidebarGroupLabel
+              className={cn(
+                "text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70 px-3",
+                collapsed && "sr-only",
+              )}
+            >
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -121,18 +129,30 @@ export function AppSidebar() {
                   const active = isActive(item.url);
                   return (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={item.title} className="h-8">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.title}
+                        className="h-8"
+                      >
                         <Link
                           to={item.url}
                           className={cn(
                             "flex items-center gap-2.5 px-2.5 text-[13px] font-medium transition-all rounded-md",
                             active
                               ? "bg-accent text-primary"
-                              : "text-foreground/70 hover:bg-secondary hover:text-foreground"
+                              : "text-foreground/70 hover:bg-secondary hover:text-foreground",
                           )}
                         >
-                          <item.icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
-                          <span className={cn("truncate", collapsed && "sr-only")}>{item.title}</span>
+                          <item.icon
+                            className={cn(
+                              "size-4 shrink-0",
+                              active ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
+                          <span className={cn("truncate", collapsed && "sr-only")}>
+                            {item.title}
+                          </span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -149,7 +169,9 @@ export function AppSidebar() {
           <div className="rounded-lg border border-border bg-gradient-to-br from-accent/60 to-card p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Sparkles className="size-3 text-primary" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Kumpels AI</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                Kumpels AI
+              </span>
             </div>
             <p className="text-[11px] text-muted-foreground leading-snug">
               3 patients need attention today. Review suggestions.

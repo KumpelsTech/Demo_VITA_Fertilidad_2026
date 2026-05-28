@@ -19,7 +19,11 @@ export const Route = createFileRoute("/fertility-cases")({
   head: () => ({
     meta: [
       { title: "Fertility Cases — Kumpels Core" },
-      { name: "description", content: "Case-centric workspace orchestrating patients, donors, gametes, prescriptions, and procedures." },
+      {
+        name: "description",
+        content:
+          "Case-centric workspace orchestrating patients, donors, gametes, prescriptions, and procedures.",
+      },
     ],
   }),
 });
@@ -75,7 +79,11 @@ const cases: CaseRow[] = [
     stage: "FET prep",
     protocol: "FET (programmed)",
     day: 8,
-    parties: { intended: ["Maria L. Rodriguez", "Daniel Rodriguez"], donors: ["DE-204"], surrogate: "G. Alvarez" },
+    parties: {
+      intended: ["Maria L. Rodriguez", "Daniel Rodriguez"],
+      donors: ["DE-204"],
+      surrogate: "G. Alvarez",
+    },
     embryos: 2,
     oocytes: 0,
     risk: "medium",
@@ -112,7 +120,18 @@ const cases: CaseRow[] = [
   },
 ];
 
-const STAGE_ORDER = ["Consult", "Baseline", "Stim", "Trigger", "Retrieval", "Embryo dev", "FET prep", "Transfer", "βhCG", "Follow-up"];
+const STAGE_ORDER = [
+  "Consult",
+  "Baseline",
+  "Stim",
+  "Trigger",
+  "Retrieval",
+  "Embryo dev",
+  "FET prep",
+  "Transfer",
+  "βhCG",
+  "Follow-up",
+];
 
 function FertilityCasesPage() {
   return (
@@ -124,7 +143,8 @@ function FertilityCasesPage() {
           </div>
           <h1 className="text-xl font-semibold tracking-tight mt-1">Fertility cases</h1>
           <p className="text-[13px] text-muted-foreground mt-1">
-            The central workspace · every patient, donor, gamete, embryo and procedure orchestrated as one journey.
+            The central workspace · every patient, donor, gamete, embryo and procedure orchestrated
+            as one journey.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -144,8 +164,12 @@ function FertilityCasesPage() {
         </div>
         <div className="flex-1">
           <p className="text-[12px] text-foreground/85 leading-relaxed">
-            <span className="font-semibold text-primary">5 active cases · 2 need decisions today.</span> FC-2018 has slower D3 embryos — extended culture suggested.
-            FC-2031 trigger countdown started · WhatsApp reminder dispatched. FC-2002 surrogate ready for transfer window in 4 days.
+            <span className="font-semibold text-primary">
+              5 active cases · 2 need decisions today.
+            </span>{" "}
+            FC-2018 has slower D3 embryos — extended culture suggested. FC-2031 trigger countdown
+            started · WhatsApp reminder dispatched. FC-2002 surrogate ready for transfer window in 4
+            days.
           </p>
         </div>
       </div>
@@ -183,7 +207,9 @@ function CaseCard({ c }: { c: CaseRow }) {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-[14px] font-semibold tracking-tight">{c.title}</h3>
-              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{c.id}</span>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                {c.id}
+              </span>
               <RiskBadge risk={c.risk} />
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -198,9 +224,19 @@ function CaseCard({ c }: { c: CaseRow }) {
               {c.parties.donors?.map((d) => (
                 <Chip key={d} icon={Heart} label={`Donor ${d}`} tone="muted" />
               ))}
-              {c.parties.surrogate && <Chip icon={Baby} label={`Surrogate · ${c.parties.surrogate}`} tone="muted" />}
-              {c.embryos > 0 && <Chip icon={Snowflake} label={`${c.embryos} embryo${c.embryos > 1 ? "s" : ""}`} tone="muted" />}
-              {c.oocytes > 0 && <Chip icon={FlaskConical} label={`${c.oocytes} oocytes`} tone="muted" />}
+              {c.parties.surrogate && (
+                <Chip icon={Baby} label={`Surrogate · ${c.parties.surrogate}`} tone="muted" />
+              )}
+              {c.embryos > 0 && (
+                <Chip
+                  icon={Snowflake}
+                  label={`${c.embryos} embryo${c.embryos > 1 ? "s" : ""}`}
+                  tone="muted"
+                />
+              )}
+              {c.oocytes > 0 && (
+                <Chip icon={FlaskConical} label={`${c.oocytes} oocytes`} tone="muted" />
+              )}
             </div>
           </div>
         </div>
@@ -220,16 +256,20 @@ function CaseCard({ c }: { c: CaseRow }) {
             const active = i === stageIdx;
             return (
               <div key={label} className="flex flex-col items-center">
-                <div className={cn(
-                  "size-2.5 rounded-full ring-2 ring-card",
-                  done && "bg-primary",
-                  active && "bg-primary",
-                  !done && !active && "bg-border",
-                )} />
-                <span className={cn(
-                  "mt-1.5 text-[9px] truncate",
-                  active ? "text-primary font-semibold" : "text-muted-foreground",
-                )}>
+                <div
+                  className={cn(
+                    "size-2.5 rounded-full ring-2 ring-card",
+                    done && "bg-primary",
+                    active && "bg-primary",
+                    !done && !active && "bg-border",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "mt-1.5 text-[9px] truncate",
+                    active ? "text-primary font-semibold" : "text-muted-foreground",
+                  )}
+                >
                   {label}
                 </span>
               </div>
@@ -252,22 +292,51 @@ function CaseCard({ c }: { c: CaseRow }) {
   );
 }
 
-function KpiCard({ label, value, foot, tone }: { label: string; value: string; foot: string; tone?: "warn" }) {
+function KpiCard({
+  label,
+  value,
+  foot,
+  tone,
+}: {
+  label: string;
+  value: string;
+  foot: string;
+  tone?: "warn";
+}) {
   return (
     <div className="bg-card rounded-xl border border-border p-4">
       <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
       <p className="text-[24px] font-semibold tracking-tight mt-1 leading-none">{value}</p>
-      <p className={cn("text-[11px] mt-2", tone === "warn" ? "text-warning" : "text-muted-foreground")}>{foot}</p>
+      <p
+        className={cn(
+          "text-[11px] mt-2",
+          tone === "warn" ? "text-warning" : "text-muted-foreground",
+        )}
+      >
+        {foot}
+      </p>
     </div>
   );
 }
 
-function Chip({ icon: Icon, label, tone }: { icon: React.ComponentType<{ className?: string }>; label: string; tone: "primary" | "muted" }) {
+function Chip({
+  icon: Icon,
+  label,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  tone: "primary" | "muted";
+}) {
   return (
-    <span className={cn(
-      "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border",
-      tone === "primary" ? "bg-accent text-primary border-accent" : "bg-secondary text-foreground/70 border-transparent",
-    )}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border",
+        tone === "primary"
+          ? "bg-accent text-primary border-accent"
+          : "bg-secondary text-foreground/70 border-transparent",
+      )}
+    >
       <Icon className="size-2.5" />
       {label}
     </span>
@@ -275,8 +344,18 @@ function Chip({ icon: Icon, label, tone }: { icon: React.ComponentType<{ classNa
 }
 
 function RiskBadge({ risk }: { risk: "low" | "medium" | "high" }) {
-  if (risk === "low") return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-success/10 text-success">On track</span>;
-  if (risk === "medium") return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-accent text-primary">Monitor</span>;
+  if (risk === "low")
+    return (
+      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-success/10 text-success">
+        On track
+      </span>
+    );
+  if (risk === "medium")
+    return (
+      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-accent text-primary">
+        Monitor
+      </span>
+    );
   return (
     <span className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-warning/10 text-warning">
       <AlertTriangle className="size-2.5" /> Action

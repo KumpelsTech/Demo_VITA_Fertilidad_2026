@@ -23,7 +23,13 @@ export const Route = createFileRoute("/")({
 });
 
 const kpis = [
-  { label: "Active treatments", value: "142", delta: "+12", trend: "up" as const, foot: "vs. last week" },
+  {
+    label: "Active treatments",
+    value: "142",
+    delta: "+12",
+    trend: "up" as const,
+    foot: "vs. last week",
+  },
   { label: "Procedures today", value: "11", delta: "4 OPU · 5 ET · 2 FET", trend: "flat" as const },
   { label: "Embryo dev (D3+)", value: "86%", delta: "Optimal range", trend: "up" as const },
   { label: "Inventory alerts", value: "3", delta: "Gonal-F low", trend: "warn" as const },
@@ -114,29 +120,30 @@ function DashboardPage() {
             <Sparkles className="size-3.5" />
           </div>
           <p className="text-[12px] leading-snug text-foreground/80">
-            <span className="font-semibold text-primary">Today's brief:</span> 11 procedures scheduled,
-            1 trigger needs confirmation in 4h, and Gonal-F stock will block 3 cycles by Friday.
+            <span className="font-semibold text-primary">Today's brief:</span> 11 procedures
+            scheduled, 1 trigger needs confirmation in 4h, and Gonal-F stock will block 3 cycles by
+            Friday.
           </p>
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {kpis.map((k) => (
-            <button
-              key={k.label}
-              onClick={() => {
-                const map: Record<string, string> = {
-                  "Active treatments": "/fertility-cases",
-                  "Procedures today": "/procedures",
-                  "Embryo dev (D3+)": "/laboratory-gamete-bank",
-                  "Inventory alerts": "/inventory",
-                };
-                notify(`Opening ${k.label.toLowerCase()}`);
-                navigate({ to: map[k.label] ?? "/" });
-              }}
-              className="text-left bg-card rounded-xl border border-border p-4 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
-            >
+        {kpis.map((k) => (
+          <button
+            key={k.label}
+            onClick={() => {
+              const map: Record<string, string> = {
+                "Active treatments": "/fertility-cases",
+                "Procedures today": "/procedures",
+                "Embryo dev (D3+)": "/laboratory-gamete-bank",
+                "Inventory alerts": "/inventory",
+              };
+              notify(`Opening ${k.label.toLowerCase()}`);
+              navigate({ to: map[k.label] ?? "/" });
+            }}
+            className="text-left bg-card rounded-xl border border-border p-4 hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer"
+          >
             <p className="text-[11px] font-medium text-muted-foreground">{k.label}</p>
             <p className="text-[28px] font-semibold tracking-tight text-foreground mt-1 leading-none">
               {k.value}
@@ -145,17 +152,19 @@ function DashboardPage() {
               {k.trend === "up" && <TrendingUp className="size-3 text-success" />}
               {k.trend === "warn" && <AlertTriangle className="size-3 text-warning" />}
               {k.trend === "flat" && <Activity className="size-3 text-muted-foreground" />}
-              <span className={cn(
-                "text-[11px] font-medium",
-                k.trend === "up" && "text-success",
-                k.trend === "warn" && "text-warning",
-                k.trend === "flat" && "text-muted-foreground",
-              )}>
+              <span
+                className={cn(
+                  "text-[11px] font-medium",
+                  k.trend === "up" && "text-success",
+                  k.trend === "warn" && "text-warning",
+                  k.trend === "flat" && "text-muted-foreground",
+                )}
+              >
                 {k.delta}
               </span>
               {k.foot && <span className="text-[11px] text-muted-foreground">· {k.foot}</span>}
             </div>
-            </button>
+          </button>
         ))}
       </div>
 
@@ -166,7 +175,14 @@ function DashboardPage() {
           <Section
             title="Priority queue"
             kicker="What needs you in the next hours"
-            action={<Link to="/alerts" className="text-[12px] font-medium text-primary hover:underline inline-flex items-center gap-1">View all <ChevronRight className="size-3" /></Link>}
+            action={
+              <Link
+                to="/alerts"
+                className="text-[12px] font-medium text-primary hover:underline inline-flex items-center gap-1"
+              >
+                View all <ChevronRight className="size-3" />
+              </Link>
+            }
           >
             <div className="divide-y divide-border">
               {priorityQueue.map((item) => (
@@ -175,12 +191,14 @@ function DashboardPage() {
                   onClick={() => navigate({ to: item.route })}
                   className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 group cursor-pointer hover:bg-secondary/40 -mx-2 px-2 rounded-md transition-colors"
                 >
-                  <div className={cn(
-                    "size-8 rounded-lg flex items-center justify-center shrink-0",
-                    item.severity === "critical" && "bg-critical/10 text-critical",
-                    item.severity === "warning" && "bg-warning/10 text-warning",
-                    item.severity === "info" && "bg-accent text-primary",
-                  )}>
+                  <div
+                    className={cn(
+                      "size-8 rounded-lg flex items-center justify-center shrink-0",
+                      item.severity === "critical" && "bg-critical/10 text-critical",
+                      item.severity === "warning" && "bg-warning/10 text-warning",
+                      item.severity === "info" && "bg-accent text-primary",
+                    )}
+                  >
                     <item.icon className="size-4" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -196,11 +214,12 @@ function DashboardPage() {
                       });
                     }}
                     className={cn(
-                    "text-[11px] font-medium px-2.5 h-7 rounded-md transition-colors shrink-0",
-                    item.severity === "critical"
-                      ? "bg-critical text-white hover:bg-critical/90"
-                      : "bg-secondary hover:bg-accent text-foreground hover:text-primary",
-                  )}>
+                      "text-[11px] font-medium px-2.5 h-7 rounded-md transition-colors shrink-0",
+                      item.severity === "critical"
+                        ? "bg-critical text-white hover:bg-critical/90"
+                        : "bg-secondary hover:bg-accent text-foreground hover:text-primary",
+                    )}
+                  >
                     {item.action}
                   </button>
                 </div>
@@ -213,7 +232,11 @@ function DashboardPage() {
             title="Sarah K. Thompson"
             kicker="FC-2031 · Long Agonist IVF · Day 12 · Trigger phase"
             action={
-              <Link to="/fertility-cases/$caseId" params={{ caseId: "FC-2031" }} className="text-[12px] font-medium text-primary hover:underline inline-flex items-center gap-1">
+              <Link
+                to="/fertility-cases/$caseId"
+                params={{ caseId: "FC-2031" }}
+                className="text-[12px] font-medium text-primary hover:underline inline-flex items-center gap-1"
+              >
                 Open case <ArrowUpRight className="size-3" />
               </Link>
             }
@@ -228,20 +251,25 @@ function DashboardPage() {
               <div className="relative grid grid-cols-7 gap-1">
                 {stages.map((s) => (
                   <div key={s.label} className="flex flex-col items-center text-center">
-                    <div className={cn(
-                      "size-9 rounded-full flex items-center justify-center text-[11px] font-semibold ring-4 ring-card transition-colors",
-                      s.status === "done" && "bg-primary text-primary-foreground",
-                      s.status === "active" && "bg-card border-2 border-primary text-primary",
-                      s.status === "next" && "bg-accent text-primary border border-accent",
-                      s.status === "pending" && "bg-card border border-border text-muted-foreground",
-                    )}>
+                    <div
+                      className={cn(
+                        "size-9 rounded-full flex items-center justify-center text-[11px] font-semibold ring-4 ring-card transition-colors",
+                        s.status === "done" && "bg-primary text-primary-foreground",
+                        s.status === "active" && "bg-card border-2 border-primary text-primary",
+                        s.status === "next" && "bg-accent text-primary border border-accent",
+                        s.status === "pending" &&
+                          "bg-card border border-border text-muted-foreground",
+                      )}
+                    >
                       {s.status === "done" ? <CheckCircle2 className="size-4" /> : s.short}
                     </div>
-                    <p className={cn(
-                      "mt-2 text-[11px] font-medium",
-                      s.status === "active" ? "text-primary" : "text-foreground/70",
-                      s.status === "pending" && "text-muted-foreground",
-                    )}>
+                    <p
+                      className={cn(
+                        "mt-2 text-[11px] font-medium",
+                        s.status === "active" ? "text-primary" : "text-foreground/70",
+                        s.status === "pending" && "text-muted-foreground",
+                      )}
+                    >
                       {s.label}
                     </p>
                     <p className="text-[10px] text-muted-foreground">{s.when}</p>
@@ -257,14 +285,22 @@ function DashboardPage() {
                   <Pill className="size-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-foreground">Ovidrel 250mcg · Trigger</p>
-                  <p className="text-[11px] text-muted-foreground">Administer at exactly 21:45 · auto-reminder sent via WhatsApp</p>
+                  <p className="text-[13px] font-semibold text-foreground">
+                    Ovidrel 250mcg · Trigger
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Administer at exactly 21:45 · auto-reminder sent via WhatsApp
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-lg font-mono font-semibold text-primary tracking-tight tabular-nums">04:32:15</p>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">until trigger</p>
+                  <p className="text-lg font-mono font-semibold text-primary tracking-tight tabular-nums">
+                    04:32:15
+                  </p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    until trigger
+                  </p>
                 </div>
                 <button
                   disabled={triggerConfirmed}
@@ -294,15 +330,21 @@ function DashboardPage() {
               <div className="space-y-1">
                 {procedures.map((p) => (
                   <div key={p.title} className="flex items-center gap-3 py-1.5">
-                    <span className="text-[11px] font-mono text-muted-foreground w-12 tabular-nums">{p.time}</span>
+                    <span className="text-[11px] font-mono text-muted-foreground w-12 tabular-nums">
+                      {p.time}
+                    </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-medium truncate">{p.title}</p>
                       <p className="text-[10px] text-muted-foreground">{p.room}</p>
                     </div>
-                    <span className={cn(
-                      "text-[10px] font-medium px-2 py-0.5 rounded-full",
-                      p.status === "in-progress" ? "bg-accent text-primary" : "bg-secondary text-muted-foreground",
-                    )}>
+                    <span
+                      className={cn(
+                        "text-[10px] font-medium px-2 py-0.5 rounded-full",
+                        p.status === "in-progress"
+                          ? "bg-accent text-primary"
+                          : "bg-secondary text-muted-foreground",
+                      )}
+                    >
                       {p.status === "in-progress" ? "In progress" : "Scheduled"}
                     </span>
                   </div>
@@ -344,10 +386,12 @@ function DashboardPage() {
               ))}
             </ul>
             <button
-              onClick={() => runMockAction("Applying AI suggestions", {
-                detail: "3 actions queued · audit trail recorded",
-                success: "3 AI suggestions applied",
-              })}
+              onClick={() =>
+                runMockAction("Applying AI suggestions", {
+                  detail: "3 actions queued · audit trail recorded",
+                  success: "3 AI suggestions applied",
+                })
+              }
               className="mt-4 w-full h-8 rounded-md bg-card border border-border text-[12px] font-medium hover:bg-secondary transition-colors"
             >
               Apply all
@@ -358,24 +402,49 @@ function DashboardPage() {
           <Section
             title="Patient comms"
             kicker="WhatsApp · 3 unread"
-            action={<Link to="/communications" className="text-[12px] font-medium text-primary hover:underline">Open</Link>}
+            action={
+              <Link
+                to="/communications"
+                className="text-[12px] font-medium text-primary hover:underline"
+              >
+                Open
+              </Link>
+            }
           >
             <div className="space-y-3">
               {[
-                { name: "Sarah K.", msg: "Can I take prenatal vitamins with Ovidrel?", t: "15:02", unread: true },
+                {
+                  name: "Sarah K.",
+                  msg: "Can I take prenatal vitamins with Ovidrel?",
+                  t: "15:02",
+                  unread: true,
+                },
                 { name: "Maria L.", msg: "Thank you for the reminder!", t: "09:05", unread: false },
-                { name: "Jennifer C.", msg: "When can we schedule the transfer?", t: "Yest", unread: false },
+                {
+                  name: "Jennifer C.",
+                  msg: "When can we schedule the transfer?",
+                  t: "Yest",
+                  unread: false,
+                },
               ].map((m) => (
                 <div key={m.name} className="flex items-start gap-3">
                   <div className="size-8 rounded-full bg-accent text-primary flex items-center justify-center text-[10px] font-semibold shrink-0">
-                    {m.name.split(" ").map((n) => n[0]).join("")}
+                    {m.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-[12px] font-semibold">{m.name}</p>
                       <span className="text-[10px] text-muted-foreground">{m.t}</span>
                     </div>
-                    <p className={cn("text-[11px] truncate", m.unread ? "text-foreground" : "text-muted-foreground")}>
+                    <p
+                      className={cn(
+                        "text-[11px] truncate",
+                        m.unread ? "text-foreground" : "text-muted-foreground",
+                      )}
+                    >
                       {m.msg}
                     </p>
                   </div>
@@ -389,7 +458,11 @@ function DashboardPage() {
           <Section
             title="Operational queue"
             kicker="4 open"
-            action={<Link to="/tasks" className="text-[12px] font-medium text-primary hover:underline">View</Link>}
+            action={
+              <Link to="/tasks" className="text-[12px] font-medium text-primary hover:underline">
+                View
+              </Link>
+            }
           >
             <div className="space-y-2">
               {[
@@ -415,19 +488,25 @@ function DashboardPage() {
                     {taskDone[task.t] && <CheckCircle2 className="size-3" />}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      "text-[12px] font-medium truncate",
-                      taskDone[task.t] && "line-through text-muted-foreground",
-                    )}>{task.t}</p>
+                    <p
+                      className={cn(
+                        "text-[12px] font-medium truncate",
+                        taskDone[task.t] && "line-through text-muted-foreground",
+                      )}
+                    >
+                      {task.t}
+                    </p>
                     <p className="text-[10px] text-muted-foreground">{task.who}</p>
                   </div>
-                  <span className={cn(
-                    "text-[10px] font-medium",
-                    task.p === "urgent" && "text-critical",
-                    task.p === "high" && "text-warning",
-                    task.p === "medium" && "text-primary",
-                    task.p === "low" && "text-muted-foreground",
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[10px] font-medium",
+                      task.p === "urgent" && "text-critical",
+                      task.p === "high" && "text-warning",
+                      task.p === "medium" && "text-primary",
+                      task.p === "low" && "text-muted-foreground",
+                    )}
+                  >
                     {task.p}
                   </span>
                 </div>
@@ -468,13 +547,20 @@ function Section({
 function LabRow({ tone, label }: { tone: "success" | "warning" | "muted"; label: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className={cn(
-        "size-1.5 rounded-full",
-        tone === "success" && "bg-success",
-        tone === "warning" && "bg-warning",
-        tone === "muted" && "bg-border",
-      )} />
-      <span className={cn("text-[12px]", tone === "muted" ? "text-muted-foreground" : "text-foreground")}>
+      <span
+        className={cn(
+          "size-1.5 rounded-full",
+          tone === "success" && "bg-success",
+          tone === "warning" && "bg-warning",
+          tone === "muted" && "bg-border",
+        )}
+      />
+      <span
+        className={cn(
+          "text-[12px]",
+          tone === "muted" ? "text-muted-foreground" : "text-foreground",
+        )}
+      >
         {label}
       </span>
     </div>

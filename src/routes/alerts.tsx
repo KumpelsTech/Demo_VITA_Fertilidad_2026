@@ -1,14 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  AlertCircle,
-  Info,
-  Clock,
-  X,
-  RefreshCw,
-  CheckCircle2,
-} from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, Clock, X, RefreshCw, CheckCircle2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { notify } from "@/lib/mock-actions";
@@ -20,13 +12,7 @@ export const Route = createFileRoute("/alerts")({
 
 type AlertSeverity = "critical" | "warning" | "info" | string;
 
-type AlertStatus =
-  | "ACTIVE"
-  | "ACKNOWLEDGED"
-  | "RESOLVED"
-  | "DISMISSED"
-  | string
-  | null;
+type AlertStatus = "ACTIVE" | "ACKNOWLEDGED" | "RESOLVED" | "DISMISSED" | string | null;
 
 type AlertRow = {
   id: string;
@@ -47,9 +33,9 @@ function AlertsPage() {
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [workingId, setWorkingId] = useState<string | null>(null);
-  const [severityFilter, setSeverityFilter] = useState<
-    "all" | "critical" | "warning" | "info"
-  >("all");
+  const [severityFilter, setSeverityFilter] = useState<"all" | "critical" | "warning" | "info">(
+    "all",
+  );
 
   useEffect(() => {
     loadAlerts();
@@ -60,7 +46,8 @@ function AlertsPage() {
 
     const { data, error } = await supabase
       .from("alerts")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         fertility_case_id,
@@ -73,7 +60,8 @@ function AlertsPage() {
         related_entity_id,
         created_at,
         resolved_at
-      `)
+      `,
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -181,15 +169,11 @@ function AlertsPage() {
   const counts = useMemo(() => {
     return {
       total: activeAlerts.length,
-      critical: activeAlerts.filter(
-        (alert) => normalizeSeverity(alert.severity) === "critical",
-      ).length,
-      warning: activeAlerts.filter(
-        (alert) => normalizeSeverity(alert.severity) === "warning",
-      ).length,
-      info: activeAlerts.filter(
-        (alert) => normalizeSeverity(alert.severity) === "info",
-      ).length,
+      critical: activeAlerts.filter((alert) => normalizeSeverity(alert.severity) === "critical")
+        .length,
+      warning: activeAlerts.filter((alert) => normalizeSeverity(alert.severity) === "warning")
+        .length,
+      info: activeAlerts.filter((alert) => normalizeSeverity(alert.severity) === "info").length,
     };
   }, [activeAlerts]);
 
@@ -258,9 +242,7 @@ function AlertsPage() {
         {loading && (
           <div className="rounded-xl border border-border bg-card p-8 text-center">
             <p className="text-sm font-medium">Loading alerts...</p>
-            <p className="text-[12px] text-muted-foreground mt-1">
-              Consultando la tabla alerts.
-            </p>
+            <p className="text-[12px] text-muted-foreground mt-1">Consultando la tabla alerts.</p>
           </div>
         )}
 
@@ -297,17 +279,11 @@ function AlertsPage() {
                       severity === "info" && "bg-accent",
                     )}
                   >
-                    {severity === "critical" && (
-                      <AlertTriangle className="size-4 text-critical" />
-                    )}
+                    {severity === "critical" && <AlertTriangle className="size-4 text-critical" />}
 
-                    {severity === "warning" && (
-                      <AlertCircle className="size-4 text-warning" />
-                    )}
+                    {severity === "warning" && <AlertCircle className="size-4 text-warning" />}
 
-                    {severity === "info" && (
-                      <Info className="size-4 text-primary" />
-                    )}
+                    {severity === "info" && <Info className="size-4 text-primary" />}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -348,9 +324,7 @@ function AlertsPage() {
                       <p className="text-[10.5px] text-muted-foreground mt-2">
                         Related: {alert.related_entity_type ?? "-"}{" "}
                         {alert.related_entity_id ? (
-                          <span className="font-mono">
-                            {alert.related_entity_id}
-                          </span>
+                          <span className="font-mono">{alert.related_entity_id}</span>
                         ) : null}
                       </p>
                     )}
@@ -395,11 +369,7 @@ function normalizeSeverity(severity: string | null | undefined) {
 function isClosedAlert(alert: AlertRow) {
   const status = String(alert.status ?? "ACTIVE").toUpperCase();
 
-  return (
-    status === "RESOLVED" ||
-    status === "DISMISSED" ||
-    Boolean(alert.resolved_at)
-  );
+  return status === "RESOLVED" || status === "DISMISSED" || Boolean(alert.resolved_at);
 }
 
 function AlertBadge({ severity }: { severity: "critical" | "warning" | "info" }) {

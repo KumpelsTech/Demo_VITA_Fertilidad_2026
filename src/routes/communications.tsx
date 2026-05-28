@@ -215,12 +215,8 @@ function CommunicationsPage() {
   const [patients, setPatients] = useState<CommunicationPatient[]>([]);
   const [futurePatients, setFuturePatients] = useState<FuturePatient[]>([]);
 
-  const [activeClinicPersonId, setActiveClinicPersonId] = useState<string | null>(
-    null,
-  );
-  const [activeFutureIntakeId, setActiveFutureIntakeId] = useState<string | null>(
-    null,
-  );
+  const [activeClinicPersonId, setActiveClinicPersonId] = useState<string | null>(null);
+  const [activeFutureIntakeId, setActiveFutureIntakeId] = useState<string | null>(null);
 
   const [thread, setThread] = useState<ThreadMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -236,31 +232,28 @@ function CommunicationsPage() {
 
   const [showNewFuturePatientForm, setShowNewFuturePatientForm] = useState(false);
 
-  const [newFuturePatient, setNewFuturePatient] =
-    useState<NewFuturePatientForm>({
-      firstName: "",
-      lastName: "",
-      phone: "",
-      email: "",
+  const [newFuturePatient, setNewFuturePatient] = useState<NewFuturePatientForm>({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    email: "",
 
-      documentType: "CC",
-      documentNumber: "",
-      dateOfBirth: "",
-      gender: "",
+    documentType: "CC",
+    documentNumber: "",
+    dateOfBirth: "",
+    gender: "",
 
-      source: "",
-      interestType: "",
-      notes: "",
-      priority: "normal",
-    });
+    source: "",
+    interestType: "",
+    notes: "",
+    priority: "normal",
+  });
 
   const activeCurrent =
-    patients.find((patient) => patient.clinicPersonId === activeClinicPersonId) ??
-    null;
+    patients.find((patient) => patient.clinicPersonId === activeClinicPersonId) ?? null;
 
   const activeFuture =
-    futurePatients.find((patient) => patient.intakeId === activeFutureIntakeId) ??
-    null;
+    futurePatients.find((patient) => patient.intakeId === activeFutureIntakeId) ?? null;
 
   const active = viewMode === "current" ? activeCurrent : activeFuture;
 
@@ -313,9 +306,7 @@ function CommunicationsPage() {
     active?.phone && buildWhatsAppUrl(active.phone, draft || defaultWhatsAppMessage);
 
   const activeFutureCount = futurePatients.filter(
-    (patient) =>
-      patient.intakeStatus !== "converted_to_patient" &&
-      patient.intakeStatus !== "lost",
+    (patient) => patient.intakeStatus !== "converted_to_patient" && patient.intakeStatus !== "lost",
   ).length;
 
   const convertedFutureCount = futurePatients.filter(
@@ -326,15 +317,15 @@ function CommunicationsPage() {
     (patient) => patient.intakeStatus === "lost",
   ).length;
 
-  const aiReplies =
-    viewMode === "current" ? currentPatientReplies : futurePatientReplies;
+  const aiReplies = viewMode === "current" ? currentPatientReplies : futurePatientReplies;
 
   const loadPatients = async () => {
     setLoadingPatients(true);
 
     const { data, error } = await supabase
       .from("clinic_persons")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         person_id,
@@ -346,14 +337,12 @@ function CommunicationsPage() {
           email,
           document_number
         )
-      `)
+      `,
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(
-        "Error loading patients for communications:",
-        JSON.stringify(error, null, 2),
-      );
+      console.error("Error loading patients for communications:", JSON.stringify(error, null, 2));
       notify("Error", error.message || "No se pudieron cargar los pacientes.");
       setLoadingPatients(false);
       return;
@@ -391,7 +380,8 @@ function CommunicationsPage() {
 
     const { data: intakeRows, error: intakeError } = await supabase
       .from("patient_intake_pipeline")
-      .select(`
+      .select(
+        `
         id,
         clinic_id,
         clinic_person_id,
@@ -402,18 +392,13 @@ function CommunicationsPage() {
         next_action,
         notes,
         created_at
-      `)
+      `,
+      )
       .order("created_at", { ascending: false });
 
     if (intakeError) {
-      console.error(
-        "Error loading future patients:",
-        JSON.stringify(intakeError, null, 2),
-      );
-      notify(
-        "Error",
-        intakeError.message || "No se pudieron cargar los candidatos.",
-      );
+      console.error("Error loading future patients:", JSON.stringify(intakeError, null, 2));
+      notify("Error", intakeError.message || "No se pudieron cargar los candidatos.");
       setLoadingFuturePatients(false);
       return;
     }
@@ -431,7 +416,8 @@ function CommunicationsPage() {
     if (clinicPersonIds.length > 0) {
       const { data: clinicPersonRows, error: clinicPersonError } = await supabase
         .from("clinic_persons")
-        .select(`
+        .select(
+          `
           id,
           clinic_id,
           person_id,
@@ -443,7 +429,8 @@ function CommunicationsPage() {
             email,
             document_number
           )
-        `)
+        `,
+        )
         .in("id", clinicPersonIds);
 
       if (clinicPersonError) {
@@ -451,15 +438,10 @@ function CommunicationsPage() {
           "Error loading clinic persons for future patients:",
           JSON.stringify(clinicPersonError, null, 2),
         );
-        notify(
-          "Error",
-          clinicPersonError.message || "No se pudieron cargar los datos personales.",
-        );
+        notify("Error", clinicPersonError.message || "No se pudieron cargar los datos personales.");
       }
 
-      clinicPersonsById = new Map(
-        (clinicPersonRows ?? []).map((row: any) => [row.id, row]),
-      );
+      clinicPersonsById = new Map((clinicPersonRows ?? []).map((row: any) => [row.id, row]));
     }
 
     const mapped: FuturePatient[] = (intakeRows ?? []).map((row: any) => {
@@ -585,9 +567,7 @@ function CommunicationsPage() {
 
     if (viewMode === "future" && activeFuture) {
       const nextStatus =
-        activeFuture.intakeStatus === "new_lead"
-          ? "contacted"
-          : activeFuture.intakeStatus;
+        activeFuture.intakeStatus === "new_lead" ? "contacted" : activeFuture.intakeStatus;
 
       await supabase
         .from("patient_intake_pipeline")
@@ -602,10 +582,10 @@ function CommunicationsPage() {
         currentPatients.map((patient) =>
           patient.intakeId === activeFuture.intakeId
             ? {
-              ...patient,
-              intakeStatus: nextStatus,
-              nextAction: "Esperar respuesta del paciente",
-            }
+                ...patient,
+                intakeStatus: nextStatus,
+                nextAction: "Esperar respuesta del paciente",
+              }
             : patient,
         ),
       );
@@ -679,9 +659,9 @@ function CommunicationsPage() {
         currentPatients.map((patient) =>
           patient.intakeId === activeFuture.intakeId
             ? {
-              ...patient,
-              nextAction: "Follow-up programado",
-            }
+                ...patient,
+                nextAction: "Follow-up programado",
+              }
             : patient,
         ),
       );
@@ -689,10 +669,7 @@ function CommunicationsPage() {
 
     setCreatingFollowUp(false);
 
-    notify(
-      "Seguimiento creado",
-      `Se creó una tarea de seguimiento para ${active.patient}.`,
-    );
+    notify("Seguimiento creado", `Se creó una tarea de seguimiento para ${active.patient}.`);
   };
 
   const createFuturePatient = async () => {
@@ -727,7 +704,6 @@ function CommunicationsPage() {
       document_number: newFuturePatient.documentNumber.trim() || null,
       birth_date: newFuturePatient.dateOfBirth || null,
       gender: newFuturePatient.gender || null,
-
     });
     if (personError) {
       console.error("Error creating person:", JSON.stringify(personError, null, 2));
@@ -736,40 +712,30 @@ function CommunicationsPage() {
       return;
     }
 
-    const { error: clinicPersonError } = await supabase
-      .from("clinic_persons")
-      .insert({
-        id: clinicPersonId,
-        clinic_id: DEFAULT_CLINIC_ID,
-        person_id: personId,
-      });
+    const { error: clinicPersonError } = await supabase.from("clinic_persons").insert({
+      id: clinicPersonId,
+      clinic_id: DEFAULT_CLINIC_ID,
+      person_id: personId,
+    });
 
     if (clinicPersonError) {
-      console.error(
-        "Error creating clinic person:",
-        JSON.stringify(clinicPersonError, null, 2),
-      );
-      notify(
-        "Error",
-        clinicPersonError.message || "No se pudo crear la relación con la clínica.",
-      );
+      console.error("Error creating clinic person:", JSON.stringify(clinicPersonError, null, 2));
+      notify("Error", clinicPersonError.message || "No se pudo crear la relación con la clínica.");
       setCreatingFuturePatient(false);
       return;
     }
 
-    const { error: intakeError } = await supabase
-      .from("patient_intake_pipeline")
-      .insert({
-        id: intakeId,
-        clinic_id: DEFAULT_CLINIC_ID,
-        clinic_person_id: clinicPersonId,
-        source: newFuturePatient.source.trim() || null,
-        intake_status: "new_lead",
-        interest_type: newFuturePatient.interestType.trim() || null,
-        priority: newFuturePatient.priority,
-        next_action: "Primer contacto por WhatsApp",
-        notes: newFuturePatient.notes.trim() || null,
-      });
+    const { error: intakeError } = await supabase.from("patient_intake_pipeline").insert({
+      id: intakeId,
+      clinic_id: DEFAULT_CLINIC_ID,
+      clinic_person_id: clinicPersonId,
+      source: newFuturePatient.source.trim() || null,
+      intake_status: "new_lead",
+      interest_type: newFuturePatient.interestType.trim() || null,
+      priority: newFuturePatient.priority,
+      next_action: "Primer contacto por WhatsApp",
+      notes: newFuturePatient.notes.trim() || null,
+    });
 
     if (intakeError) {
       console.error("Error creating intake:", JSON.stringify(intakeError, null, 2));
@@ -830,9 +796,9 @@ function CommunicationsPage() {
       currentPatients.map((patient) =>
         patient.intakeId === activeFuture.intakeId
           ? {
-            ...patient,
-            intakeStatus: status,
-          }
+              ...patient,
+              intakeStatus: status,
+            }
           : patient,
       ),
     );
@@ -847,12 +813,8 @@ function CommunicationsPage() {
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-[14px] font-semibold tracking-tight">
-                Comunicaciones
-              </h2>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                WhatsApp & follow-up
-              </p>
+              <h2 className="text-[14px] font-semibold tracking-tight">Comunicaciones</h2>
+              <p className="text-[10px] text-muted-foreground mt-0.5">WhatsApp & follow-up</p>
             </div>
 
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-medium">
@@ -901,19 +863,13 @@ function CommunicationsPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="bg-transparent outline-none text-[12px] flex-1 placeholder:text-muted-foreground"
-              placeholder={
-                viewMode === "current"
-                  ? "Buscar paciente…"
-                  : "Buscar paciente futuro…"
-              }
+              placeholder={viewMode === "current" ? "Buscar paciente…" : "Buscar paciente futuro…"}
             />
           </div>
 
           {viewMode === "future" && (
             <button
-              onClick={() =>
-                setShowNewFuturePatientForm((currentValue) => !currentValue)
-              }
+              onClick={() => setShowNewFuturePatientForm((currentValue) => !currentValue)}
               className="mt-3 w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-[12px] font-medium rounded-md h-8 hover:bg-primary/90"
             >
               <Plus className="size-3.5" />
@@ -955,13 +911,11 @@ function CommunicationsPage() {
             </div>
           )}
 
-          {!loading &&
-            viewMode === "future" &&
-            filteredFuturePatients.length === 0 && (
-              <div className="p-4 text-[12px] text-muted-foreground">
-                No hay candidatos registrados.
-              </div>
-            )}
+          {!loading && viewMode === "future" && filteredFuturePatients.length === 0 && (
+            <div className="p-4 text-[12px] text-muted-foreground">
+              No hay candidatos registrados.
+            </div>
+          )}
 
           {viewMode === "current" &&
             filteredPatients.map((patient) => (
@@ -970,8 +924,7 @@ function CommunicationsPage() {
                 onClick={() => setActiveClinicPersonId(patient.clinicPersonId)}
                 className={cn(
                   "w-full text-left p-3.5 border-b border-border/50 hover:bg-secondary/60 transition-colors",
-                  patient.clinicPersonId === activeClinicPersonId &&
-                  "bg-accent/40",
+                  patient.clinicPersonId === activeClinicPersonId && "bg-accent/40",
                 )}
               >
                 <PatientCard patient={patient} />
@@ -1039,9 +992,7 @@ function CommunicationsPage() {
               </div>
 
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold truncate">
-                  {active.patient}
-                </p>
+                <p className="text-[13px] font-semibold truncate">{active.patient}</p>
 
                 <p className="text-[10px] text-muted-foreground truncate">
                   {active.clinicPersonId} · WhatsApp
@@ -1113,10 +1064,7 @@ function CommunicationsPage() {
                   </>
                 )}
                 {active.phone ? (
-                  <span className="text-muted-foreground">
-                    {" "}
-                    Número registrado: {active.phone}.
-                  </span>
+                  <span className="text-muted-foreground"> Número registrado: {active.phone}.</span>
                 ) : (
                   <span className="text-destructive">
                     {" "}
@@ -1165,10 +1113,7 @@ function CommunicationsPage() {
               {thread.map((message, index) => (
                 <div
                   key={`${message.t}-${index}`}
-                  className={cn(
-                    "flex flex-col gap-1",
-                    message.self ? "items-end" : "items-start",
-                  )}
+                  className={cn("flex flex-col gap-1", message.self ? "items-end" : "items-start")}
                 >
                   <div
                     className={cn(
@@ -1284,9 +1229,7 @@ function PatientCard({ patient }: { patient: CommunicationPatient }) {
           <p className="text-[12px] font-semibold truncate">{patient.patient}</p>
         </div>
 
-        <p className="text-[10px] text-muted-foreground truncate">
-          {patient.stage}
-        </p>
+        <p className="text-[10px] text-muted-foreground truncate">{patient.stage}</p>
 
         {patient.documentNumber && (
           <p className="text-[10px] truncate mt-0.5 text-muted-foreground">
@@ -1298,16 +1241,12 @@ function PatientCard({ patient }: { patient: CommunicationPatient }) {
           {patient.phone ? (
             <>
               <MessageCircle className="size-3 text-muted-foreground" />
-              <p className="text-[10px] truncate text-muted-foreground">
-                {patient.phone}
-              </p>
+              <p className="text-[10px] truncate text-muted-foreground">{patient.phone}</p>
             </>
           ) : (
             <>
               <AlertCircle className="size-3 text-destructive" />
-              <p className="text-[10px] truncate text-destructive">
-                Sin teléfono
-              </p>
+              <p className="text-[10px] truncate text-destructive">Sin teléfono</p>
             </>
           )}
         </div>
@@ -1337,25 +1276,19 @@ function FuturePatientCard({ patient }: { patient: FuturePatient }) {
             {getStatusLabel(patient.intakeStatus)}
           </span>
 
-          <span className={getPriorityClass(patient.priority)}>
-            {patient.priority}
-          </span>
+          <span className={getPriorityClass(patient.priority)}>{patient.priority}</span>
         </div>
 
         <div className="flex items-center gap-1 mt-1">
           {patient.phone ? (
             <>
               <MessageCircle className="size-3 text-muted-foreground" />
-              <p className="text-[10px] truncate text-muted-foreground">
-                {patient.phone}
-              </p>
+              <p className="text-[10px] truncate text-muted-foreground">{patient.phone}</p>
             </>
           ) : (
             <>
               <AlertCircle className="size-3 text-destructive" />
-              <p className="text-[10px] truncate text-destructive">
-                Sin teléfono
-              </p>
+              <p className="text-[10px] truncate text-destructive">Sin teléfono</p>
             </>
           )}
         </div>
@@ -1560,11 +1493,7 @@ function NewFuturePatientForm({
           disabled={creating}
           className="text-[12px] px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1.5"
         >
-          {creating ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : (
-            <Plus className="size-3.5" />
-          )}
+          {creating ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
           Crear paciente futuro
         </button>
       </div>
