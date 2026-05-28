@@ -48,8 +48,8 @@ const navGroups = [
   {
     label: "Clinical",
     items: [
-      { title: "Medication & Pharmacy", url: "/medication-pharmacy", icon: Pill },
-      { title: "Laboratory & Gamete Bank", url: "/laboratory-gamete-bank", icon: FlaskConical },
+      { title: "Pharmacy", url: "/medication-pharmacy", icon: Pill },
+      { title: "Nursing", url: "/laboratory-gamete-bank", icon: FlaskConical },
       { title: "Patient Follow-up", url: "/patient-followup", icon: HeartPulse },
       { title: "Donor Management", url: "/donors", icon: Heart },
     ],

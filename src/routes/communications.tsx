@@ -402,7 +402,7 @@ function CommunicationsPage() {
       );
       notify(
         "Error",
-        intakeError.message || "No se pudieron cargar los pacientes futuros.",
+        intakeError.message || "No se pudieron cargar los candidatos.",
       );
       setLoadingFuturePatients(false);
       return;
@@ -592,10 +592,10 @@ function CommunicationsPage() {
         currentPatients.map((patient) =>
           patient.intakeId === activeFuture.intakeId
             ? {
-                ...patient,
-                intakeStatus: nextStatus,
-                nextAction: "Esperar respuesta del paciente",
-              }
+              ...patient,
+              intakeStatus: nextStatus,
+              nextAction: "Esperar respuesta del paciente",
+            }
             : patient,
         ),
       );
@@ -669,9 +669,9 @@ function CommunicationsPage() {
         currentPatients.map((patient) =>
           patient.intakeId === activeFuture.intakeId
             ? {
-                ...patient,
-                nextAction: "Follow-up programado",
-              }
+              ...patient,
+              nextAction: "Follow-up programado",
+            }
             : patient,
         ),
       );
@@ -811,9 +811,9 @@ function CommunicationsPage() {
       currentPatients.map((patient) =>
         patient.intakeId === activeFuture.intakeId
           ? {
-              ...patient,
-              intakeStatus: status,
-            }
+            ...patient,
+            intakeStatus: status,
+          }
           : patient,
       ),
     );
@@ -839,7 +839,7 @@ function CommunicationsPage() {
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent text-primary font-medium">
               {viewMode === "current"
                 ? `${patients.length} pacientes`
-                : `${activeFutureCount} futuros`}
+                : `${activeFutureCount} candidatos`}
             </span>
           </div>
 
@@ -871,7 +871,7 @@ function CommunicationsPage() {
                   : "bg-background border-border hover:bg-secondary",
               )}
             >
-              Futuros
+              Candidatos
             </button>
           </div>
 
@@ -898,7 +898,7 @@ function CommunicationsPage() {
               className="mt-3 w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground text-[12px] font-medium rounded-md h-8 hover:bg-primary/90"
             >
               <Plus className="size-3.5" />
-              Nuevo paciente futuro
+              Nuevo candidato
             </button>
           )}
 
@@ -940,7 +940,7 @@ function CommunicationsPage() {
             viewMode === "future" &&
             filteredFuturePatients.length === 0 && (
               <div className="p-4 text-[12px] text-muted-foreground">
-                No hay pacientes futuros registrados.
+                No hay candidatos registrados.
               </div>
             )}
 
@@ -952,7 +952,7 @@ function CommunicationsPage() {
                 className={cn(
                   "w-full text-left p-3.5 border-b border-border/50 hover:bg-secondary/60 transition-colors",
                   patient.clinicPersonId === activeClinicPersonId &&
-                    "bg-accent/40",
+                  "bg-accent/40",
                 )}
               >
                 <PatientCard patient={patient} />
@@ -979,7 +979,7 @@ function CommunicationsPage() {
         <div className="h-14 border-b border-border bg-card flex items-center justify-between px-5">
           <div>
             <h1 className="text-[14px] font-semibold">
-              {viewMode === "current" ? "Pacientes actuales" : "Pacientes futuros"}
+              {viewMode === "current" ? "Pacientes actuales" : "Candidatos"}
             </h1>
             <p className="text-[11px] text-muted-foreground">
               {viewMode === "current"
@@ -1056,10 +1056,10 @@ function CommunicationsPage() {
                 Crear follow-up
               </button>
 
-              {viewMode === "current" && (
+              {viewMode === "current" && active?.personId && (
                 <Link
                   to="/patients/$patientId"
-                  params={{ patientId: active.clinicPersonId }}
+                  params={{ patientId: active.personId }}
                   className="text-[12px] text-primary font-medium hover:underline inline-flex items-center gap-1"
                 >
                   Open patient <ChevronRight className="size-3" />
@@ -1362,7 +1362,7 @@ function NewFuturePatientForm({
     <div className="m-5 rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
         <UserPlus className="size-4 text-primary" />
-        <h2 className="text-sm font-semibold">Nuevo paciente futuro</h2>
+        <h2 className="text-sm font-semibold">Nuevo candidato</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
