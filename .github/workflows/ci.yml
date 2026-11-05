@@ -15,4 +15,4 @@ jobs:
           node-version: 24
           cache: npm                     # cachea dependencias
       - run: npm ci                      # instala exacto según el lockfile
-      - run: npm format
+      - run: npm audit --audit-level=high
