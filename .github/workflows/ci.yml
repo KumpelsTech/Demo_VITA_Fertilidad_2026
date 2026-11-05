@@ -1,0 +1,18 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6        # descarga el código
+      - uses: actions/setup-node@v6      # instala Node
+        with:
+          node-version: 24
+          cache: npm                     # cachea dependencias
+      - run: npm ci                      # instala exacto según el lockfile
+      - run: npm format
